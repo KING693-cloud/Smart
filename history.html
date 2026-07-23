@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SMART STAKE BANK – History</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <style>
+        /* ----- RESET & BASE ----- */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background: #0b0d17; color: #fff; min-height: 100vh; display: flex; justify-content: center; padding: 16px; }
+        .app { max-width: 480px; width: 100%; background: #111424; border-radius: 28px; padding: 20px 18px 30px; border: 1px solid rgba(245,158,11,0.15); box-shadow: 0 20px 60px rgba(0,0,0,0.7); }
+
+        /* HEADER */
+        .header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.04); margin-bottom: 20px; }
+        .header .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+        .header .brand .logo-icon { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #fbbf24, #f59e0b); display: flex; align-items: center; justify-content: center; color: #111424; font-size: 1.4rem; flex-shrink: 0; }
+        .header .brand .name { font-weight: 900; font-size: 1.1rem; background: linear-gradient(135deg, #fbbf24, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .header .user-actions { display: flex; align-items: center; gap: 8px; }
+        .header .user-actions .back-btn { background: rgba(245,158,11,0.1); border: 1px solid #f59e0b44; color: #f59e0b; padding: 5px 12px; border-radius: 30px; font-size: 0.6rem; font-weight: 700; cursor: pointer; transition: 0.3s; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+        .header .user-actions .back-btn:hover { background: rgba(245,158,11,0.2); }
+        .header .user-actions .logout-btn { background: rgba(239,68,68,0.1); border: 1px solid #ef444433; color: #ef4444; padding: 5px 12px; border-radius: 30px; font-size: 0.6rem; font-weight: 700; cursor: pointer; transition: 0.3s; }
+        .header .user-actions .logout-btn:hover { background: rgba(239,68,68,0.2); }
+
+        /* TABS */
+        .tab-btns { display: flex; gap: 6px; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.04); padding-bottom: 10px; flex-wrap: wrap; }
+        .tab-btn { flex: 1; min-width: 50px; padding: 6px 0; background: transparent; border: none; color: #6b7280; font-weight: 700; font-size: 0.7rem; cursor: pointer; transition: 0.3s; text-align: center; border-bottom: 2px solid transparent; }
+        .tab-btn.active { color: #f59e0b; border-bottom-color: #f59e0b; }
+        .tab-btn:hover { color: #f59e0b; }
+
+        /* STATS */
+        .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+        .stat-card { background: #161a2e; border-radius: 12px; padding: 10px; text-align: center; border-left: 3px solid #f59e0b; }
+        .stat-card .number { font-size: 1.2rem; font-weight: 900; }
+        .stat-card .number.green { color: #10b981; }
+        .stat-card .number.red { color: #ef4444; }
+        .stat-card .number.gold { color: #fbbf24; }
+        .stat-card .label { font-size: 0.55rem; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.3px; }
+
+        /* FILTER */
+        .filter-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+        .filter-bar input { flex: 1; min-width: 120px; background: #0b0d17; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 8px 12px; color: #fff; font-size: 0.8rem; outline: none; }
+        .filter-bar input:focus { border-color: #f59e0b; }
+        .filter-bar input::placeholder { color: #4a5568; }
+        .filter-bar .filter-group { display: flex; gap: 4px; flex-wrap: wrap; }
+        .filter-bar .filter-btn { background: transparent; border: 1px solid rgba(255,255,255,0.06); color: #9ca3af; padding: 4px 12px; border-radius: 30px; font-size: 0.6rem; font-weight: 700; cursor: pointer; transition: 0.3s; }
+        .filter-bar .filter-btn.active { background: rgba(245,158,11,0.1); border-color: #f59e0b; color: #f59e0b; }
+        .filter-bar .filter-btn:hover { border-color: #f59e0b; color: #f59e0b; }
+        .refresh-btn { background: rgba(245,158,11,0.1); border: 1px solid #f59e0b44; color: #f59e0b; padding: 4px 12px; border-radius: 30px; font-size: 0.6rem; font-weight: 700; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 4px; }
+        .refresh-btn:hover { background: rgba(245,158,11,0.2); }
+        .refresh-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* HISTORY LIST */
+        .history-list { display: flex; flex-direction: column; gap: 8px; min-height: 200px; }
+        .history-item { background: #161a2e; padding: 12px 14px; border-radius: 12px; border-left: 3px solid #f59e0b; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px; font-size: 0.75rem; }
+        .history-item .info { flex: 1; }
+        .history-item .info .title { font-weight: 600; }
+        .history-item .info .date { color: #6b7280; font-size: 0.6rem; }
+        .history-item .info .reason { font-size: 0.65rem; color: #ef4444; margin-top: 2px; }
+        .history-item .info .status-badge { font-size: 0.55rem; padding: 2px 8px; border-radius: 20px; font-weight: 700; text-transform: uppercase; display: inline-block; margin-left: 6px; }
+        .status-badge.pending { background: rgba(245,158,11,0.15); color: #f59e0b; }
+        .status-badge.approved { background: rgba(16,185,129,0.15); color: #10b981; }
+        .status-badge.rejected { background: rgba(239,68,68,0.15); color: #ef4444; }
+        .history-item .amount { font-weight: 700; white-space: nowrap; }
+        .history-item .amount.credit { color: #10b981; }
+        .history-item .amount.debit { color: #ef4444; }
+
+        .no-items { text-align: center; color: #6b7280; padding: 30px 0; font-size: 0.8rem; }
+        .loader { text-align: center; padding: 30px 0; }
+        .loader .spinner { width: 30px; height: 30px; border: 3px solid #1b203a; border-top-color: #f59e0b; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 8px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* TELEGRAM POPUP */
+        .telegram-popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            padding: 20px;
+        }
+        .telegram-popup-overlay.active { display: flex; }
+        .telegram-popup-card {
+            background: #161a2e;
+            border-radius: 24px;
+            padding: 30px 24px;
+            max-width: 360px;
+            width: 100%;
+            text-align: center;
+            border: 2px solid #f59e0b;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.9);
+        }
+        .telegram-popup-card .icon { font-size: 3.5rem; color: #f59e0b; margin-bottom: 8px; }
+        .telegram-popup-card h2 { color: #fff; font-size: 1.3rem; margin-bottom: 4px; }
+        .telegram-popup-card p { color: #9ca3af; font-size: 0.85rem; margin-bottom: 16px; line-height: 1.5; }
+        .telegram-popup-card .btn-telegram {
+            display: inline-block;
+            background: #0088cc;
+            border: none;
+            color: #fff;
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: 0.3s;
+            text-decoration: none;
+            margin-right: 10px;
+        }
+        .telegram-popup-card .btn-telegram:hover { background: #006699; transform: scale(1.02); }
+        .telegram-popup-card .btn-cancel { background: #374151; border: none; color: #fff; padding: 12px 24px; border-radius: 30px; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: 0.3s; }
+        .telegram-popup-card .btn-cancel:hover { background: #4b5563; }
+        .telegram-popup-card .actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+        /* FOOTER */
+        .footer { text-align: center; padding: 16px 0 4px; border-top: 1px solid rgba(255,255,255,0.04); margin-top: 24px; }
+        .footer p { font-size: 0.55rem; color: #374151; }
+        .footer p a { color: #f59e0b; text-decoration: none; font-weight: 700; }
+
+        @media (max-width: 480px) {
+            .stats-row { grid-template-columns: repeat(3,1fr); }
+            .filter-bar { flex-direction: column; align-items: stretch; }
+            .filter-bar .filter-group { justify-content: center; }
+            .tab-btns { gap: 4px; }
+            .tab-btn { font-size: 0.6rem; min-width: 40px; padding: 4px 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- HEADER -->
+        <header class="header">
+            <div class="brand">
+                <div class="logo-icon"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+                <span class="name">SMART STAKE</span>
+            </div>
+            <div class="user-actions">
+                <a href="index.html" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</a>
+                <button class="logout-btn" onclick="logout()"><i class="fa-solid fa-sign-out-alt"></i></button>
+            </div>
+        </header>
+
+        <!-- TABS -->
+        <div class="tab-btns">
+            <button class="tab-btn active" data-tab="all">All</button>
+            <button class="tab-btn" data-tab="ledger">Transactions</button>
+            <button class="tab-btn" data-tab="tasks">Tasks</button>
+            <button class="tab-btn" data-tab="withdrawals">Withdrawals</button>
+        </div>
+
+        <!-- STATS -->
+        <div class="stats-row" id="statsRow">
+            <div class="stat-card"><div class="number green" id="statEarned">₦0</div><div class="label">Earned</div></div>
+            <div class="stat-card"><div class="number red" id="statWithdrawn">₦0</div><div class="label">Withdrawn</div></div>
+            <div class="stat-card"><div class="number gold" id="statPending">0</div><div class="label">Pending</div></div>
+        </div>
+
+        <!-- FILTER -->
+        <div class="filter-bar">
+            <input type="text" id="searchInput" placeholder="Search..." />
+            <div class="filter-group" id="filterGroup">
+                <button class="filter-btn active" data-filter="all">All</button>
+                <button class="filter-btn" data-filter="credit">Credits</button>
+                <button class="filter-btn" data-filter="debit">Debits</button>
+            </div>
+            <button class="refresh-btn" id="refreshBtn"><i class="fa-solid fa-rotate"></i> Refresh</button>
+        </div>
+
+        <!-- LIST -->
+        <div class="history-list" id="historyList">
+            <div class="loader"><div class="spinner"></div><p>Loading history...</p></div>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="footer">
+            <p><i class="fa-regular fa-registered"></i> Sponsored by <a href="https://nexus-earn.com" target="_blank">NEXUS-EARN.COM</a></p>
+        </div>
+    </div>
+
+    <!-- TELEGRAM POPUP -->
+    <div class="telegram-popup-overlay" id="telegramPopup">
+        <div class="telegram-popup-card">
+            <div class="icon"><i class="fa-brands fa-telegram"></i></div>
+            <h2>📱 Join Our Telegram</h2>
+            <p>Get instant updates, task alerts, and support on our official Telegram channel.</p>
+            <div class="actions">
+                <a href="https://t.me/initialstakes" target="_blank" class="btn-telegram"><i class="fa-brands fa-telegram"></i> Go to Telegram</a>
+                <button class="btn-cancel" onclick="closeTelegramPopup()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ================================================================
+        // FIREBASE CONFIG
+        // ================================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyA_sby1ZimuTp4xbVI9cFSk5sk8lYqDsJg",
+            authDomain: "smart-stake-bank-1.firebaseapp.com",
+            databaseURL: "https://smart-stake-bank-1-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "smart-stake-bank-1",
+            storageBucket: "smart-stake-bank-1.firebasestorage.app",
+            messagingSenderId: "232589917462",
+            appId: "1:232589917462:web:058c0938fdda6eb001e437"
+        };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const rtdb = firebase.database();
+
+        // ================================================================
+        // TELEGRAM POPUP
+        // ================================================================
+        function showTelegramPopup() {
+            const popup = document.getElementById('telegramPopup');
+            if (popup) popup.classList.add('active');
+        }
+
+        function closeTelegramPopup() {
+            const popup = document.getElementById('telegramPopup');
+            if (popup) popup.classList.remove('active');
+        }
+
+        // ================================================================
+        // GLOBALS
+        // ================================================================
+        let currentUserId = null;
+        let currentTab = 'all';
+        let allItems = [];
+        let filteredItems = [];
+        let filterType = 'all';
+
+        const statsEarned = document.getElementById('statEarned');
+        const statsWithdrawn = document.getElementById('statWithdrawn');
+        const statsPending = document.getElementById('statPending');
+        const historyList = document.getElementById('historyList');
+        const searchInput = document.getElementById('searchInput');
+        const refreshBtn = document.getElementById('refreshBtn');
+
+        // ================================================================
+        // TAB SWITCHING
+        // ================================================================
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentTab = this.dataset.tab;
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                document.querySelector('.filter-btn[data-filter="all"]').classList.add('active');
+                filterType = 'all';
+                loadTabData();
+            });
+        });
+
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                filterType = this.dataset.filter;
+                applyFilters();
+            });
+        });
+
+        searchInput.addEventListener('input', applyFilters);
+        refreshBtn.addEventListener('click', () => loadTabData());
+
+        // ================================================================
+        // LOAD TAB DATA – NO DUPLICATES
+        // ================================================================
+        async function loadTabData() {
+            if (!currentUserId) return;
+            refreshBtn.disabled = true;
+            refreshBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            historyList.innerHTML = '<div class="loader"><div class="spinner"></div><p>Loading...</p></div>';
+
+            try {
+                let items = [];
+
+                // LEDGER – only credits and debits (excluding withdrawal debits that are in withdrawals node)
+                if (currentTab === 'all' || currentTab === 'ledger') {
+                    const ledger = await loadLedgerData();
+                    items = items.concat(ledger);
+                }
+
+                // TASKS
+                if (currentTab === 'all' || currentTab === 'tasks') {
+                    const tasks = await loadTasksData();
+                    items = items.concat(tasks);
+                }
+
+                // WITHDRAWALS – ONLY from withdrawals node
+                if (currentTab === 'all' || currentTab === 'withdrawals') {
+                    const withdrawals = await loadWithdrawalsData();
+                    items = items.concat(withdrawals);
+                }
+
+                items.sort((a, b) => b.date - a.date);
+                allItems = items;
+                updateStats();
+                applyFilters();
+            } catch (e) {
+                historyList.innerHTML = `<div class="no-items" style="color:#ef4444;">Error loading: ${e.message}</div>`;
+            } finally {
+                refreshBtn.disabled = false;
+                refreshBtn.innerHTML = '<i class="fa-solid fa-rotate"></i>';
+            }
+        }
+
+        // ================================================================
+        // DATA LOADERS (NO DUPLICATES)
+        // ================================================================
+        async function loadLedgerData() {
+            const snap = await rtdb.ref('ledger').orderByChild('userId').equalTo(currentUserId).once('value');
+            const items = [];
+            if (snap.exists()) {
+                snap.forEach(child => {
+                    const d = child.val();
+                    const title = d.title || 'Transaction';
+                    // Skip withdrawal debits (they will be shown from withdrawals node)
+                    if (title.includes('Withdrawal Request') || title.includes('💸')) {
+                        return; // Skip to avoid duplicates
+                    }
+                    items.push({
+                        id: child.key,
+                        title: title,
+                        amount: d.amount || 0,
+                        type: d.type || 'credit',
+                        reason: d.reason || '',
+                        timestamp: d.timestamp || new Date().toISOString(),
+                        date: d.timestamp ? new Date(d.timestamp) : new Date(0),
+                        source: 'ledger',
+                        status: 'completed'
+                    });
+                });
+            }
+            return items;
+        }
+
+        async function loadTasksData() {
+            const snap = await rtdb.ref('taskSubmissions').orderByChild('userId').equalTo(currentUserId).once('value');
+            const items = [];
+            if (snap.exists()) {
+                snap.forEach(child => {
+                    const d = child.val();
+                    items.push({
+                        id: child.key,
+                        title: `Task Submission`,
+                        reward: d.reward || 0,
+                        amount: d.reward || 0,
+                        status: d.status || 'pending',
+                        reason: d.reason || '',
+                        timestamp: d.timestamp || new Date().toISOString(),
+                        date: d.timestamp ? new Date(d.timestamp) : new Date(0),
+                        source: 'tasks',
+                        type: 'task'
+                    });
+                });
+            }
+            return items;
+        }
+
+        async function loadWithdrawalsData() {
+            const snap = await rtdb.ref('withdrawals').orderByChild('userId').equalTo(currentUserId).once('value');
+            const items = [];
+            if (snap.exists()) {
+                snap.forEach(child => {
+                    const d = child.val();
+                    const status = d.status || 'pending';
+                    // Show all withdrawals, but only count approved in stats
+                    items.push({
+                        id: child.key,
+                        title: `Withdrawal Request`,
+                        amount: d.netAmount || 0,
+                        grossAmount: d.grossAmount || 0,
+                        tax: d.taxWithheld || 0,
+                        status: status,
+                        reason: d.reason || '',
+                        bankName: d.bankName || 'N/A',
+                        timestamp: d.timestamp || new Date().toISOString(),
+                        date: d.timestamp ? new Date(d.timestamp) : new Date(0),
+                        source: 'withdrawals',
+                        type: 'withdrawal',
+                        isWithdrawal: true
+                    });
+                });
+            }
+            return items;
+        }
+
+        // ================================================================
+        // UPDATE STATS – Only approved withdrawals count
+        // ================================================================
+        function updateStats() {
+            let earned = 0, withdrawn = 0, pending = 0;
+
+            allItems.forEach(item => {
+                if (item.source === 'ledger') {
+                    if (item.type === 'credit') earned += item.amount;
+                } else if (item.source === 'tasks') {
+                    if (item.status === 'approved') earned += item.reward || 0;
+                    else if (item.status === 'pending') pending++;
+                } else if (item.source === 'withdrawals') {
+                    // ONLY count approved withdrawals in total withdrawn
+                    if (item.status === 'approved') withdrawn += item.amount;
+                    else if (item.status === 'pending') pending++;
+                    // Rejected withdrawals do NOT count in withdrawn
+                }
+            });
+
+            statsEarned.textContent = `₦${earned.toLocaleString()}`;
+            statsWithdrawn.textContent = `₦${withdrawn.toLocaleString()}`;
+            statsPending.textContent = pending;
+        }
+
+        // ================================================================
+        // APPLY FILTERS
+        // ================================================================
+        function applyFilters() {
+            const query = searchInput.value.toLowerCase().trim();
+            let filtered = [...allItems];
+
+            if (filterType === 'credit') {
+                filtered = filtered.filter(item => {
+                    if (item.source === 'ledger') return item.type === 'credit';
+                    else if (item.source === 'tasks') return item.status === 'approved';
+                    else if (item.source === 'withdrawals') return false; // withdrawals are always debits
+                    return true;
+                });
+            } else if (filterType === 'debit') {
+                filtered = filtered.filter(item => {
+                    if (item.source === 'ledger') return item.type === 'debit';
+                    else if (item.source === 'tasks') return item.status === 'rejected';
+                    else if (item.source === 'withdrawals') return true; // all withdrawals are debits
+                    return true;
+                });
+            }
+
+            if (query) {
+                filtered = filtered.filter(item => {
+                    const title = (item.title || '').toLowerCase();
+                    const reason = (item.reason || '').toLowerCase();
+                    return title.includes(query) || reason.includes(query);
+                });
+            }
+
+            filteredItems = filtered;
+            renderItems(filteredItems);
+        }
+
+        // ================================================================
+        // RENDER ITEMS
+        // ================================================================
+        function renderItems(items) {
+            if (!items || items.length === 0) {
+                historyList.innerHTML = '<div class="no-items">No items found.</div>';
+                return;
+            }
+            let html = '';
+            items.forEach(item => {
+                const isCredit = item.type === 'credit';
+                const amount = item.amount || 0;
+                let statusBadge = '';
+                let reasonHtml = '';
+
+                if (item.source === 'withdrawals' || item.source === 'tasks') {
+                    const status = item.status || 'pending';
+                    const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
+                    statusBadge = `<span class="status-badge ${status}">${statusLabel}</span>`;
+                    if (status === 'rejected' && item.reason) {
+                        reasonHtml = `<div class="reason">Reason: ${item.reason}</div>`;
+                    }
+                }
+
+                let title = item.title || 'Transaction';
+                if (item.source === 'withdrawals') {
+                    title = `Withdrawal ₦${item.amount.toLocaleString()}`;
+                }
+                if (item.source === 'tasks') {
+                    title = `Task: ₦${item.amount.toLocaleString()}`;
+                }
+
+                const sign = isCredit ? '+' : '-';
+                const amountClass = isCredit ? 'credit' : 'debit';
+                const date = item.date.toLocaleString();
+
+                html += `
+                    <div class="history-item">
+                        <div class="info">
+                            <div class="title">${title} ${statusBadge}</div>
+                            <div class="date">${date}</div>
+                            ${reasonHtml}
+                            ${item.reason && item.source === 'ledger' ? `<div class="reason">${item.reason}</div>` : ''}
+                        </div>
+                        <div class="amount ${amountClass}">${sign}₦${Math.abs(amount).toLocaleString()}</div>
+                    </div>
+                `;
+            });
+            historyList.innerHTML = html;
+        }
+
+        // ================================================================
+        // AUTH
+        // ================================================================
+        auth.onAuthStateChanged(user => {
+            if (!user) {
+                Swal.fire({ title: 'Session Expired', text: 'Please login to view history.', icon: 'warning', background: '#111424', color: '#fff', confirmButtonColor: '#f59e0b' })
+                    .then(() => window.location.href = 'index.html');
+                return;
+            }
+            currentUserId = user.uid;
+            loadTabData();
+            setTimeout(() => { showTelegramPopup(); }, 800);
+        });
+
+        function logout() {
+            Swal.fire({ title: 'Logout?', icon: 'question', showCancelButton: true, confirmButtonColor: '#ef4444', cancelButtonColor: '#f59e0b', background: '#111424', color: '#fff' })
+                .then(result => { if (result.isConfirmed) { auth.signOut();
+                        window.location.href = 'index.html'; } });
+        }
+    </script>
+</body>
+</html>

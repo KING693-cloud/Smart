@@ -1,0 +1,2401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- ===== OPEN GRAPH META TAGS (WhatsApp/Telegram Preview) ===== -->
+    <meta property="og:title" content="SMART STAKE BANK – Earn & Withdraw" />
+    <meta property="og:description" content="Complete tasks, earn money, and withdraw instantly. Join SMART STAKE BANK today!" />
+    <meta property="og:image" content="https://swiftduel.name.ng/smart.png" />
+    <meta property="og:image:width" content="512" />
+    <meta property="og:image:height" content="512" />
+    <meta property="og:url" content="https://swiftduel.name.ng" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="SMART STAKE BANK – Earn & Withdraw" />
+    <meta name="twitter:description" content="Complete tasks, earn money, and withdraw instantly." />
+    <meta name="twitter:image" content="https://swiftduel.name.ng/smart.png" />
+    <!-- ================================================================ -->
+    <title>SMART STAKE BANK – Earn & Withdraw</title>
+    <link rel="icon" href="smart.png" type="image/png" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <style>
+        /* ----- RESET & BASE ----- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+        body {
+            background: #0b0d17;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 16px;
+        }
+        .app {
+            max-width: 480px;
+            width: 100%;
+            background: #111424;
+            border-radius: 28px;
+            padding: 20px 18px 30px;
+            border: 1px solid rgba(245, 158, 11, 0.15);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+        }
+
+        /* ----- FULL-PAGE LOADER ----- */
+        .app-loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0b0d17;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            flex-direction: column;
+            gap: 16px;
+            transition: opacity 0.6s ease;
+        }
+        .app-loader.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .app-loader .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #1b203a;
+            border-top-color: #f59e0b;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        .app-loader p {
+            color: #9ca3af;
+            font-size: 0.9rem;
+        }
+
+        /* ----- HEADER (with username) ----- */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .header .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+        .header .brand .logo-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            overflow: hidden;
+            background: #0b0d17;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #f59e0b33;
+            flex-shrink: 0;
+        }
+        .header .brand .logo-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .header .brand .logo-icon i {
+            font-size: 1.4rem;
+            color: #f59e0b;
+        }
+        .header .brand .name {
+            font-weight: 900;
+            font-size: 1.1rem;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header .user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .header .user-info .username {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #fff;
+            max-width: 120px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            background: rgba(255, 255, 255, 0.04);
+            padding: 4px 12px;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .header .user-info .history-btn {
+            background: rgba(245, 158, 11, 0.15);
+            border: 2px solid #f59e0b;
+            color: #f59e0b;
+            padding: 5px 14px;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 900;
+            cursor: pointer;
+            transition: 0.3s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+        }
+        .header .user-info .history-btn:hover {
+            background: rgba(245, 158, 11, 0.25);
+            transform: scale(1.02);
+        }
+        .header .user-info .logout-btn {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid #ef444433;
+            color: #ef4444;
+            padding: 5px 12px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .header .user-info .logout-btn:hover {
+            background: rgba(239, 68, 68, 0.2);
+        }
+
+        @media (max-width: 480px) {
+            .header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+            }
+            .header .brand {
+                justify-content: center;
+            }
+            .header .user-info {
+                justify-content: center;
+            }
+            .header .user-info .username {
+                max-width: 150px;
+                font-size: 0.75rem;
+            }
+            .header .user-info .history-btn {
+                font-size: 0.65rem;
+                padding: 4px 10px;
+            }
+        }
+
+        /* ----- AUTH SECTION ----- */
+        .auth-section {
+            margin: 10px 0 20px;
+        }
+        .tab-btns {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            background: #0b0d17;
+            border: 1px solid transparent;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: 700;
+            cursor: pointer;
+            color: #6b7280;
+            transition: 0.3s;
+            font-size: 0.85rem;
+        }
+        .tab-btn i {
+            margin-right: 6px;
+        }
+        .tab-btn.active {
+            border-color: #f59e0b;
+            color: #f59e0b;
+            background: rgba(245, 158, 11, 0.05);
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.05);
+        }
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-group label {
+            font-size: 0.65rem;
+            color: #9ca3af;
+            font-weight: 600;
+            display: block;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .form-group label .required {
+            color: #ef4444;
+        }
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            background: #0b0d17;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 14px 16px;
+            color: #fff;
+            font-size: 0.95rem;
+            outline: none;
+            transition: 0.3s;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.08);
+        }
+        .form-group input::placeholder {
+            color: #4a5568;
+        }
+        .form-group select option {
+            background: #161a2e;
+            color: #fff;
+        }
+        .form-group .hint {
+            font-size: 0.6rem;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+        .btn-primary {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            border: none;
+            border-radius: 12px;
+            font-weight: 800;
+            color: #111424;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 8px;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-primary:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 20px rgba(245, 158, 11, 0.3);
+        }
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .forgot-link {
+            text-align: right;
+            margin-top: 8px;
+            font-size: 0.75rem;
+            color: #f59e0b;
+            cursor: pointer;
+        }
+        .forgot-link:hover {
+            text-decoration: underline;
+        }
+        .switch-tab {
+            text-align: center;
+            margin-top: 16px;
+            font-size: 0.8rem;
+            color: #9ca3af;
+        }
+        .switch-tab a {
+            color: #f59e0b;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .switch-tab a:hover {
+            text-decoration: underline;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .divider {
+            border: none;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            margin: 18px 0;
+        }
+
+        /* ----- EXCITING FEATURES SECTION ----- */
+        .features-section {
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            text-align: center;
+        }
+        .feature-item {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 12px;
+            padding: 10px 4px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+        .feature-item i {
+            font-size: 1.5rem;
+            color: #f59e0b;
+            display: block;
+            margin-bottom: 4px;
+        }
+        .feature-item .title {
+            font-size: 0.6rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: #fbbf24;
+        }
+        .feature-item .desc {
+            font-size: 0.55rem;
+            color: #9ca3af;
+            margin-top: 2px;
+        }
+        @media (max-width: 420px) {
+            .features-section {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        /* ----- SETUP ----- */
+        .setup-box {
+            background: linear-gradient(145deg, #161a2e, #1b203a);
+            border-radius: 20px;
+            padding: 24px 20px;
+            border: 2px solid #f59e0b;
+            margin-bottom: 20px;
+        }
+        .setup-box h2 {
+            color: #f59e0b;
+            font-size: 1.2rem;
+            margin-bottom: 6px;
+        }
+        .setup-box p {
+            color: #9ca3af;
+            font-size: 0.8rem;
+            margin-bottom: 16px;
+        }
+
+        /* ----- DASHBOARD ----- */
+        .balance-card {
+            background: linear-gradient(145deg, #161a2e, #1b203a);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(245, 158, 11, 0.15);
+            text-align: center;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+        }
+        .balance-card .label {
+            font-size: 0.7rem;
+            color: #9ca3af;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .balance-card .amount {
+            font-size: 2.8rem;
+            font-weight: 900;
+            color: #10b981;
+            margin: 6px 0 12px;
+        }
+        .uid-box {
+            background: #0b0d17;
+            border-radius: 12px;
+            padding: 12px;
+            border: 1px dashed #f59e0b;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .uid-box .uid-left {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            flex: 1;
+        }
+        .uid-box .uid-label {
+            font-size: 0.55rem;
+            color: #6b7280;
+            text-transform: uppercase;
+        }
+        .uid-box .uid-value {
+            font-size: 1.3rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: #fbbf24;
+        }
+        .uid-box .copy-btn {
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid #f59e0b44;
+            color: #f59e0b;
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        .uid-box .copy-btn:hover {
+            background: rgba(245, 158, 11, 0.25);
+        }
+        .uid-box .copy-btn.copied {
+            background: #10b98133;
+            border-color: #10b981;
+            color: #10b981;
+        }
+
+        .bank-card {
+            background: #161a2e;
+            border-radius: 16px;
+            padding: 16px;
+            margin: 16px 0 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .bank-card .bank-title {
+            font-size: 0.65rem;
+            color: #9ca3af;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .bank-card .bank-title i {
+            color: #f59e0b;
+        }
+        .bank-card .bank-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 0.85rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        }
+        .bank-card .bank-row:last-child {
+            border-bottom: none;
+        }
+        .bank-card .bank-row .label {
+            color: #9ca3af;
+            font-weight: 500;
+        }
+        .bank-card .bank-row .value {
+            font-weight: 600;
+            color: #fff;
+            text-align: right;
+        }
+        .bank-card .bank-row .value.bank-name {
+            color: #fbbf24;
+        }
+        .bank-card .bank-row .value.acct-number {
+            color: #10b981;
+            letter-spacing: 0.5px;
+        }
+        .bank-card .support-note {
+            font-size: 0.55rem;
+            color: #6b7280;
+            margin-top: 8px;
+            text-align: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            padding-top: 8px;
+        }
+
+        /* ----- BANK SETUP SECTION (when admin resets bank) ----- */
+        .bank-setup-section {
+            display: none;
+            margin: 16px 0;
+            background: #161a2e;
+            border-radius: 16px;
+            padding: 16px;
+            border: 2px solid #f59e0b;
+        }
+        .bank-setup-section h3 {
+            color: #f59e0b;
+            font-size: 1rem;
+            margin-bottom: 8px;
+        }
+        .bank-setup-section p {
+            font-size: 0.7rem;
+            color: #9ca3af;
+            margin-bottom: 12px;
+        }
+        .bank-setup-section .form-group {
+            margin-bottom: 12px;
+        }
+        .bank-setup-section .form-group label {
+            font-size: 0.6rem;
+            color: #9ca3af;
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 4px;
+        }
+        .bank-setup-section .form-group input,
+        .bank-setup-section .form-group select {
+            width: 100%;
+            background: #0b0d17;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            padding: 10px 14px;
+            color: #fff;
+            font-size: 0.9rem;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        .bank-setup-section .form-group input:focus,
+        .bank-setup-section .form-group select:focus {
+            border-color: #f59e0b;
+        }
+        .bank-setup-section .form-group select option {
+            background: #161a2e;
+            color: #fff;
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #f59e0b;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 20px 0 12px;
+        }
+
+        /* ----- TASKS ----- */
+        .task-item {
+            background: #161a2e;
+            padding: 14px 16px;
+            border-radius: 14px;
+            margin-bottom: 10px;
+            border-left: 4px solid #f59e0b;
+            transition: 0.3s;
+        }
+        .task-item .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .task-item .info h4 {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .task-item .info p {
+            font-size: 0.7rem;
+            color: #9ca3af;
+            word-break: break-all;
+            margin-top: 2px;
+        }
+        .task-item .info p a {
+            color: #60a5fa;
+            text-decoration: none;
+        }
+        .task-item .reward {
+            font-weight: 800;
+            color: #10b981;
+            font-size: 0.95rem;
+        }
+        .task-item .task-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+            align-items: center;
+        }
+        .task-item .btn-do {
+            background: #f59e0b;
+            border: none;
+            color: #111424;
+            padding: 6px 18px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .task-item .btn-do:hover {
+            background: #fbbf24;
+            transform: scale(1.05);
+        }
+        .task-item .btn-do:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .task-item .btn-proof {
+            background: #3b82f6;
+            border: none;
+            color: #fff;
+            padding: 6px 18px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .task-item .btn-proof:hover {
+            background: #2563eb;
+            transform: scale(1.05);
+        }
+        .task-item .btn-proof:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .task-item .status-badge {
+            font-size: 0.6rem;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .status-badge.ready {
+            background: rgba(59, 130, 246, 0.15);
+            color: #3b82f6;
+        }
+        .status-badge.submitted {
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+        }
+        .status-badge.approved {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+        .status-badge.rejected {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+        .no-tasks {
+            text-align: center;
+            color: #6b7280;
+            font-size: 0.8rem;
+            padding: 20px 0;
+        }
+
+        .task-instructions {
+            margin-top: 8px;
+            padding: 10px;
+            background: #0b0d17;
+            border-radius: 10px;
+            border-left: 2px solid #3b82f6;
+        }
+        .task-instructions .toggle-btn {
+            background: transparent;
+            border: none;
+            color: #60a5fa;
+            font-size: 0.7rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 0;
+        }
+        .task-instructions .toggle-btn:hover {
+            color: #93bbfc;
+        }
+        .task-instructions .content {
+            display: none;
+            font-size: 0.75rem;
+            color: #d1d5db;
+            margin-top: 6px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+        .task-instructions .content.open {
+            display: block;
+        }
+        .task-instructions .steps {
+            margin-top: 4px;
+            padding-left: 16px;
+        }
+        .task-instructions .steps li {
+            margin-bottom: 2px;
+            font-size: 0.7rem;
+            color: #9ca3af;
+        }
+
+        /* ----- PROOF MODAL (Base64) ----- */
+        .proof-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        .proof-modal.active {
+            display: flex;
+        }
+        .proof-modal .modal-box {
+            background: #161a2e;
+            border-radius: 24px;
+            padding: 28px 24px;
+            max-width: 420px;
+            width: 100%;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+        }
+        .proof-modal .modal-box h3 {
+            color: #f59e0b;
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+        }
+        .proof-modal .modal-box p {
+            color: #9ca3af;
+            font-size: 0.8rem;
+            margin-bottom: 16px;
+        }
+        .proof-modal .file-drop {
+            border: 2px dashed #4a5568;
+            border-radius: 16px;
+            padding: 30px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-bottom: 16px;
+            position: relative;
+        }
+        .proof-modal .file-drop:hover {
+            border-color: #f59e0b;
+            background: rgba(245, 158, 11, 0.03);
+        }
+        .proof-modal .file-drop i {
+            font-size: 3rem;
+            color: #6b7280;
+            display: block;
+            margin-bottom: 8px;
+        }
+        .proof-modal .file-drop span {
+            color: #9ca3af;
+            font-size: 0.85rem;
+        }
+        .proof-modal .file-drop input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .proof-modal .preview-box {
+            margin: 12px 0;
+            display: none;
+            text-align: center;
+        }
+        .proof-modal .preview-box img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .proof-modal .preview-box .file-name {
+            font-size: 0.7rem;
+            color: #9ca3af;
+            margin-top: 4px;
+        }
+        .proof-modal .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+        .proof-modal .modal-actions button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .proof-modal .modal-actions .btn-close {
+            background: #374151;
+            color: #fff;
+        }
+        .proof-modal .modal-actions .btn-close:hover {
+            background: #4b5563;
+        }
+        .proof-modal .modal-actions .btn-submit {
+            background: #f59e0b;
+            color: #111424;
+        }
+        .proof-modal .modal-actions .btn-submit:hover {
+            background: #fbbf24;
+        }
+        .proof-modal .modal-actions .btn-submit:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* ----- WITHDRAW SECTION ----- */
+        .withdraw-section {
+            background: #161a2e;
+            border-radius: 20px;
+            padding: 20px;
+            margin-top: 24px;
+            border: 1px solid rgba(245, 158, 11, 0.15);
+        }
+        .withdraw-section h3 {
+            color: #f59e0b;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .withdraw-section .fee-info {
+            font-size: 0.7rem;
+            color: #9ca3af;
+            margin-bottom: 12px;
+        }
+        .withdraw-section .fee-info strong {
+            color: #f59e0b;
+        }
+        .withdraw-section .input-group {
+            margin-bottom: 12px;
+        }
+        .withdraw-section .input-group label {
+            font-size: 0.65rem;
+            color: #9ca3af;
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 4px;
+        }
+        .withdraw-section .input-group input {
+            width: 100%;
+            background: #0b0d17;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 14px 16px;
+            color: #fff;
+            font-size: 1rem;
+            outline: none;
+            transition: 0.3s;
+        }
+        .withdraw-section .input-group input:focus {
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.08);
+        }
+        .withdraw-section .input-group input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        .withdraw-section .input-group input::-webkit-outer-spin-button,
+        .withdraw-section .input-group input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .fee-breakdown {
+            font-size: 0.8rem;
+            color: #9ca3af;
+            background: #0b0d17;
+            border-radius: 10px;
+            padding: 10px 14px;
+            margin: 8px 0 14px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        .fee-breakdown .net {
+            color: #10b981;
+            font-weight: 700;
+        }
+        .fee-breakdown .tax {
+            color: #ef4444;
+        }
+        .btn-withdraw {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            border: none;
+            border-radius: 12px;
+            font-weight: 800;
+            color: #111424;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-withdraw:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 20px rgba(245, 158, 11, 0.3);
+        }
+        .btn-withdraw:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .min-note {
+            font-size: 0.6rem;
+            color: #6b7280;
+            margin-top: 8px;
+            text-align: center;
+        }
+
+        /* ----- FOOTER ----- */
+        .footer {
+            text-align: center;
+            padding: 16px 0 4px;
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            margin-top: 24px;
+        }
+        .footer p {
+            font-size: 0.55rem;
+            color: #374151;
+            letter-spacing: 0.3px;
+        }
+        .footer p a {
+            color: #f59e0b;
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        @media (max-width: 480px) {
+            .app {
+                padding: 16px 14px;
+            }
+            .balance-card .amount {
+                font-size: 2.2rem;
+            }
+            .uid-box .uid-value {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== FULL-PAGE LOADER ===== -->
+    <div class="app-loader" id="appLoader">
+        <div class="spinner"></div>
+        <p>Loading SMART STAKE BANK...</p>
+    </div>
+
+    <div class="app">
+
+        <!-- ===== HEADER (with username) ===== -->
+        <header class="header">
+            <div class="brand">
+                <div class="logo-icon" id="logoContainer">
+                    <img src="smart.png" alt="SMART STAKE BANK" id="logoImage" onerror="this.style.display='none'; document.getElementById('logoFallback').style.display='flex';" style="display:block;" />
+                    <i id="logoFallback" class="fa-solid fa-hand-holding-dollar" style="display:none;"></i>
+                </div>
+                <span class="name">SMART STAKE</span>
+            </div>
+            <div class="user-info">
+                <span class="username" id="userNameDisplay">Guest</span>
+                <a href="history.html" class="history-btn" id="historyLink" style="display:none;"><i class="fa-regular fa-clock"></i> History</a>
+                <button class="logout-btn" id="logoutBtn" onclick="logout()" style="display:none;"><i class="fa-solid fa-sign-out-alt"></i></button>
+            </div>
+        </header>
+
+        <!-- ===== AUTH SECTION ===== -->
+        <div id="authSection" class="auth-section">
+            <div class="tab-btns">
+                <div class="tab-btn active" id="loginTabBtn" onclick="switchTab('login')">
+                    <i class="fa-solid fa-arrow-right-to-bracket"></i> Login
+                </div>
+                <div class="tab-btn" id="signupTabBtn" onclick="switchTab('signup')">
+                    <i class="fa-solid fa-user-plus"></i> Sign Up
+                </div>
+            </div>
+            <!-- Login -->
+            <div id="loginForm">
+                <div class="form-group">
+                    <label>Email Address <span class="required">*</span></label>
+                    <input type="email" id="loginEmail" placeholder="you@example.com" />
+                </div>
+                <div class="form-group">
+                    <label>Password <span class="required">*</span></label>
+                    <input type="password" id="loginPassword" placeholder="Enter your password" />
+                </div>
+                <div class="forgot-link" onclick="resetPassword()">
+                    <i class="fa-regular fa-envelope"></i> Forgot Password?
+                </div>
+                <button class="btn-primary" id="loginBtn" onclick="loginUser()">
+                    <i class="fa-solid fa-arrow-right-to-bracket"></i> Login
+                </button>
+            </div>
+            <!-- Signup -->
+            <div id="signupForm" class="hidden">
+                <div class="form-group">
+                    <label>Full Name <span class="required">*</span></label>
+                    <input type="text" id="signupName" placeholder="John Doe" />
+                    <div class="hint">This will be your display name (must be unique).</div>
+                </div>
+                <div class="form-group">
+                    <label>Email Address <span class="required">*</span></label>
+                    <input type="email" id="signupEmail" placeholder="john@example.com" />
+                    <div class="hint">Must be unique.</div>
+                </div>
+                <div class="form-group">
+                    <label>Phone Number <span class="required">*</span></label>
+                    <input type="tel" id="signupPhone" placeholder="08012345678" maxlength="11" />
+                    <div class="hint">11 digits, starts with 0. Must be unique.</div>
+                </div>
+                <div class="form-group">
+                    <label>Password (min 6 chars) <span class="required">*</span></label>
+                    <input type="password" id="signupPassword" placeholder="••••••••" />
+                    <div class="hint">Minimum 6 characters.</div>
+                </div>
+                <hr class="divider" />
+                <p style="font-size:0.7rem; color:#f59e0b; font-weight:700; margin-bottom: 12px;">
+                    <i class="fa-solid fa-building-columns"></i> Bank Details (for withdrawals)
+                </p>
+                <div class="form-group">
+                    <label>Bank Name <span class="required">*</span></label>
+                    <select id="signupBank">
+                        <option value="">— Select your bank —</option>
+                        <option value="Access Bank">Access Bank</option>
+                        <option value="First Bank">First Bank of Nigeria</option>
+                        <option value="GTBank">GTBank (GTCO)</option>
+                        <option value="UBA">United Bank for Africa (UBA)</option>
+                        <option value="Zenith Bank">Zenith Bank</option>
+                        <option value="Opay">OPay</option>
+                        <option value="PalmPay">PalmPay</option>
+                        <option value="Kuda Bank">Kuda Bank</option>
+                        <option value="Moniepoint">Moniepoint</option>
+                        <option value="Fidelity Bank">Fidelity Bank</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Account Number <span class="required">*</span></label>
+                    <input type="text" id="signupAcctNo" placeholder="0123456789" inputmode="numeric" maxlength="10" />
+                    <div class="hint">Exactly 10 digits. Must be unique.</div>
+                </div>
+                <div class="form-group">
+                    <label>Account Name <span class="required">*</span></label>
+                    <input type="text" id="signupAcctName" placeholder="John Doe" />
+                    <div class="hint">Full name on the account.</div>
+                </div>
+                <hr class="divider" />
+                <div class="form-group">
+                    <label>4‑Digit Withdrawal PIN <span class="required">*</span></label>
+                    <input type="password" maxlength="4" inputmode="numeric" id="signupPin" placeholder="e.g. 1234" />
+                    <div class="hint">Exactly 4 digits. You can use any PIN.</div>
+                </div>
+                <button class="btn-primary" id="signupBtn" onclick="signupUser()">
+                    <i class="fa-solid fa-user-plus"></i> Create Account (Get ₦100)
+                </button>
+            </div>
+            <div class="switch-tab">
+                <span id="switchText">
+                    Don't have an account? <a onclick="switchTab('signup')">Sign Up</a>
+                </span>
+            </div>
+
+            <!-- ===== EXCITING FEATURES SECTION ===== -->
+            <div class="features-section">
+                <div class="feature-item">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <div class="title">Secure</div>
+                    <div class="desc">Bank-grade security</div>
+                </div>
+                <div class="feature-item">
+                    <i class="fa-solid fa-bolt"></i>
+                    <div class="title">Fast Payouts</div>
+                    <div class="desc">24-48 hours</div>
+                </div>
+                <div class="feature-item">
+                    <i class="fa-solid fa-headset"></i>
+                    <div class="title">Support</div>
+                    <div class="desc">24/7 Telegram</div>
+                </div>
+                <div class="feature-item">
+                    <i class="fa-solid fa-gift"></i>
+                    <div class="title">₦100 Bonus</div>
+                    <div class="desc">On signup</div>
+                </div>
+                <div class="feature-item">
+                    <i class="fa-solid fa-mobile-screen"></i>
+                    <div class="title">Mobile Ready</div>
+                    <div class="desc">Works on any phone</div>
+                </div>
+                <div class="feature-item">
+                    <i class="fa-solid fa-users"></i>
+                    <div class="title">Community</div>
+                    <div class="desc">Join our Telegram</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== SETUP SECTION ===== -->
+        <div id="setupSection" class="setup-box hidden">
+            <h2><i class="fa-solid fa-user-plus"></i> Complete Your Profile</h2>
+            <p>Welcome! Please provide your details to set up your account. You will receive ₦100 bonus after completing this.</p>
+            <div class="form-group">
+                <label>Full Name <span class="required">*</span></label>
+                <input type="text" id="setupName" placeholder="John Doe" />
+                <div class="hint">Must be unique.</div>
+            </div>
+            <div class="form-group">
+                <label>Phone Number <span class="required">*</span></label>
+                <input type="tel" id="setupPhone" placeholder="08012345678" maxlength="11" />
+                <div class="hint">11 digits, starts with 0. Must be unique.</div>
+            </div>
+            <div class="form-group">
+                <label>Bank Name <span class="required">*</span></label>
+                <select id="setupBank">
+                    <option value="">— Select your bank —</option>
+                    <option value="Access Bank">Access Bank</option>
+                    <option value="First Bank">First Bank of Nigeria</option>
+                    <option value="GTBank">GTBank (GTCO)</option>
+                    <option value="UBA">United Bank for Africa (UBA)</option>
+                    <option value="Zenith Bank">Zenith Bank</option>
+                    <option value="Opay">OPay</option>
+                    <option value="PalmPay">PalmPay</option>
+                    <option value="Kuda Bank">Kuda Bank</option>
+                    <option value="Moniepoint">Moniepoint</option>
+                    <option value="Fidelity Bank">Fidelity Bank</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Account Number <span class="required">*</span></label>
+                <input type="text" id="setupAcctNo" placeholder="0123456789" maxlength="10" />
+                <div class="hint">Exactly 10 digits. Must be unique.</div>
+            </div>
+            <div class="form-group">
+                <label>Account Name <span class="required">*</span></label>
+                <input type="text" id="setupAcctName" placeholder="John Doe" />
+                <div class="hint">Full name on the account.</div>
+            </div>
+            <div class="form-group">
+                <label>Set 4-Digit PIN <span class="required">*</span></label>
+                <input type="password" maxlength="4" inputmode="numeric" id="setupPin" placeholder="e.g. 1234" />
+                <div class="hint">Exactly 4 digits.</div>
+            </div>
+            <button class="btn-primary" id="setupBtn" onclick="completeSetup()">
+                <i class="fa-solid fa-check"></i> Complete Setup (Get ₦100)
+            </button>
+        </div>
+
+        <!-- ===== DASHBOARD ===== -->
+        <div id="dashboardSection" class="hidden">
+            <!-- Balance -->
+            <div class="balance-card">
+                <div class="label">Available Balance</div>
+                <div class="amount" id="userBalance">₦0.00</div>
+                <div class="uid-box">
+                    <div class="uid-left">
+                        <div class="uid-label"><i class="fa-solid fa-fingerprint"></i> Your Withdrawal UID</div>
+                        <div class="uid-value" id="userUid">Loading...</div>
+                    </div>
+                    <button class="copy-btn" id="copyUidBtn"><i class="fa-regular fa-copy"></i> Copy</button>
+                </div>
+            </div>
+
+            <!-- Bank Details -->
+            <div class="bank-card">
+                <div class="bank-title"><i class="fa-solid fa-building-columns"></i> Your Registered Bank Account</div>
+                <div class="bank-row">
+                    <span class="label">Bank Name</span>
+                    <span class="value bank-name" id="displayBankName">—</span>
+                </div>
+                <div class="bank-row">
+                    <span class="label">Account Number</span>
+                    <span class="value acct-number" id="displayAcctNo">—</span>
+                </div>
+                <div class="bank-row">
+                    <span class="label">Account Name</span>
+                    <span class="value" id="displayAcctName">—</span>
+                </div>
+                <div class="support-note">
+                    <i class="fa-regular fa-circle-info"></i> To change these, contact support via Telegram.
+                </div>
+            </div>
+
+            <!-- Bank Setup (when admin resets bank) -->
+            <div class="bank-setup-section" id="bankSetupSection">
+                <h3><i class="fa-solid fa-pen"></i> Update Your Bank Details</h3>
+                <p>Your bank details have been reset by admin. Please re-enter them to enable withdrawals.</p>
+                <div class="form-group">
+                    <label>Bank Name <span class="required">*</span></label>
+                    <select id="userBankName">
+                        <option value="">— Select your bank —</option>
+                        <option value="Access Bank">Access Bank</option>
+                        <option value="First Bank">First Bank of Nigeria</option>
+                        <option value="GTBank">GTBank (GTCO)</option>
+                        <option value="UBA">United Bank for Africa (UBA)</option>
+                        <option value="Zenith Bank">Zenith Bank</option>
+                        <option value="Opay">OPay</option>
+                        <option value="PalmPay">PalmPay</option>
+                        <option value="Kuda Bank">Kuda Bank</option>
+                        <option value="Moniepoint">Moniepoint</option>
+                        <option value="Fidelity Bank">Fidelity Bank</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Account Number <span class="required">*</span></label>
+                    <input type="text" id="userAccountNumber" placeholder="0123456789" maxlength="10" inputmode="numeric" />
+                    <div class="hint" style="font-size:0.55rem;color:#6b7280;">Exactly 10 digits. Must be unique.</div>
+                </div>
+                <div class="form-group">
+                    <label>Account Name <span class="required">*</span></label>
+                    <input type="text" id="userAccountName" placeholder="John Doe" />
+                </div>
+                <button class="btn-primary" onclick="saveBankDetails()" style="margin-top:4px;"><i class="fa-solid fa-check"></i> Save Bank Details</button>
+            </div>
+
+            <!-- Tasks -->
+            <div class="section-title"><i class="fa-solid fa-list-check"></i> Available Tasks</div>
+            <div id="tasksContainer"><p class="no-tasks"><i class="fa-solid fa-spinner fa-pulse"></i> Loading...</p></div>
+
+            <!-- Withdraw -->
+            <div class="withdraw-section">
+                <h3><i class="fa-solid fa-hand-holding-dollar"></i> Request Withdrawal</h3>
+                <div class="fee-info">
+                    <i class="fa-regular fa-circle-info"></i> Minimum: <strong>₦500</strong> &nbsp;|&nbsp; Maximum: <strong>₦5,000</strong> &nbsp;|&nbsp; Fee: <strong>10%</strong>
+                </div>
+                <div class="input-group">
+                    <label>Amount (₦)</label>
+                    <input type="number" id="withdrawAmount" placeholder="Enter amount" min="500" max="5000" step="100" />
+                    <div class="hint" style="color:#6b7280;font-size:0.6rem;">Min ₦500 – Max ₦5,000</div>
+                </div>
+                <div class="fee-breakdown" id="feeBreakdown">
+                    <span>Gross: ₦<span id="grossDisplay">0</span></span>
+                    <span class="tax">Fee (10%): -₦<span id="taxDisplay">0</span></span>
+                    <span class="net">Net: ₦<span id="netDisplay">0</span></span>
+                </div>
+                <button class="btn-withdraw" id="withdrawBtn" onclick="submitWithdraw()"><i class="fa-solid fa-paper-plane"></i> Withdraw</button>
+                <div class="min-note">You will be asked for your 4‑digit PIN.</div>
+            </div>
+        </div>
+
+        <!-- ===== PROOF MODAL (BASE64) ===== -->
+        <div class="proof-modal" id="proofModal">
+            <div class="modal-box">
+                <h3><i class="fa-regular fa-image"></i> Submit Proof</h3>
+                <p>Upload a screenshot showing you completed the task.</p>
+                <div class="file-drop">
+                    <i class="fa-regular fa-cloud-arrow-up"></i>
+                    <span>Tap to select screenshot<br /><small style="color:#6b7280;">Any image format (JPG, PNG, etc.)</small></span>
+                    <input type="file" id="proofFileInput" accept="image/*" />
+                </div>
+                <div class="preview-box" id="previewBox">
+                    <img id="previewImage" src="" alt="Preview" />
+                    <div class="file-name" id="fileName"></div>
+                </div>
+                <div id="proofStatus" style="font-size:0.8rem; margin-top:6px; color:#9ca3af;"></div>
+                <div class="modal-actions">
+                    <button class="btn-close" onclick="closeProofModal()">Cancel</button>
+                    <button class="btn-submit" id="submitProofBtn" onclick="submitProof()" disabled>Submit</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p><i class="fa-regular fa-registered"></i> Sponsored by <a href="https://nexus-earn.com" target="_blank">NEXUS-EARN.COM</a></p>
+        </div>
+    </div>
+
+    <script>
+        // ================================================================
+        // FIREBASE CONFIG
+        // ================================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyA_sby1ZimuTp4xbVI9cFSk5sk8lYqDsJg",
+            authDomain: "smart-stake-bank-1.firebaseapp.com",
+            databaseURL: "https://smart-stake-bank-1-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "smart-stake-bank-1",
+            storageBucket: "smart-stake-bank-1.firebasestorage.app",
+            messagingSenderId: "232589917462",
+            appId: "1:232589917462:web:058c0938fdda6eb001e437"
+        };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const rtdb = firebase.database();
+
+        // ================================================================
+        // TELEGRAM
+        // ================================================================
+        const BOT_TOKEN = "8827194509:AAFLS2WonQAKkVLEdeJEmUboA1-FVIrcVyI";
+        const ADMIN_CHAT_ID = "8966823502";
+
+        async function sendTelegramMessage(text) {
+            try {
+                await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat_id: ADMIN_CHAT_ID, text, parse_mode: 'HTML' })
+                });
+            } catch (e) { console.error('Telegram error:', e); }
+        }
+
+        // ================================================================
+        // FRIENDLY ERROR MESSAGES
+        // ================================================================
+        function getFriendlyErrorMessage(code) {
+            const map = {
+                'auth/invalid-login-credentials': 'Incorrect email or password. Please try again.',
+                'auth/user-not-found': 'No account found with this email. Please sign up first.',
+                'auth/wrong-password': 'Incorrect password. Please try again.',
+                'auth/email-already-in-use': 'This email is already registered. Please login instead.',
+                'auth/too-many-requests': 'Too many failed attempts. Please wait a moment before trying again.',
+                'auth/weak-password': 'Password must be at least 6 characters.',
+                'auth/network-request-failed': 'Network error. Please check your internet connection.',
+                'auth/requires-recent-login': 'Please re-authenticate. Log out and log in again.',
+                'auth/account-exists-with-different-credential': 'An account already exists with this email. Please login with your password.',
+                'auth/invalid-email': 'Please enter a valid email address.',
+                'auth/internal-error': 'Something went wrong. Please try again.'
+            };
+            return map[code] || 'Something went wrong. Please try again.';
+        }
+
+        // ================================================================
+        // BUTTON LOADER
+        // ================================================================
+        function setButtonLoading(btn, isLoading, loadingText, originalText) {
+            if (!btn) return;
+            if (isLoading) {
+                btn.disabled = true;
+                btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${loadingText}`;
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+
+        // ================================================================
+        // UI HELPERS
+        // ================================================================
+        function showError(msg) {
+            Swal.fire({
+                title: 'Oops!',
+                html: msg,
+                icon: 'error',
+                background: '#111424',
+                color: '#fff',
+                confirmButtonColor: '#f59e0b',
+                confirmButtonText: 'Got it'
+            });
+        }
+
+        function showSuccess(title, msg, timer = 5000) {
+            Swal.fire({
+                title: title,
+                html: msg,
+                icon: 'success',
+                background: '#111424',
+                color: '#fff',
+                confirmButtonColor: '#f59e0b',
+                timer: timer,
+                timerProgressBar: true,
+                showConfirmButton: false
+            });
+        }
+
+        function showConfirm(title, html) {
+            return Swal.fire({
+                title: title,
+                html: html,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#f59e0b',
+                cancelButtonColor: '#ef4444',
+                background: '#111424',
+                color: '#fff',
+                confirmButtonText: 'Yes, proceed',
+                cancelButtonText: 'Cancel'
+            });
+        }
+
+        function generateUID() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let uid = '';
+            for (let i = 0; i < 11; i++) uid += chars.charAt(Math.floor(Math.random() * chars.length));
+            return uid;
+        }
+
+        // ================================================================
+        // UI TOGGLES
+        // ================================================================
+        function switchTab(tab) {
+            document.getElementById('loginForm').classList.toggle('hidden', tab !== 'login');
+            document.getElementById('signupForm').classList.toggle('hidden', tab !== 'signup');
+            document.getElementById('loginTabBtn').classList.toggle('active', tab === 'login');
+            document.getElementById('signupTabBtn').classList.toggle('active', tab === 'signup');
+            document.getElementById('switchText').innerHTML = tab === 'login' ?
+                "Don't have an account? <a onclick=\"switchTab('signup')\">Sign Up</a>" :
+                "Already have an account? <a onclick=\"switchTab('login')\">Login</a>";
+        }
+
+        function showAuth() {
+            document.getElementById('authSection').classList.remove('hidden');
+            document.getElementById('setupSection').classList.add('hidden');
+            document.getElementById('dashboardSection').classList.add('hidden');
+            document.getElementById('logoutBtn').style.display = 'none';
+            document.getElementById('userNameDisplay').textContent = 'Guest';
+            document.getElementById('historyLink').style.display = 'none';
+            document.getElementById('bankSetupSection').style.display = 'none';
+        }
+
+        function showSetup() {
+            document.getElementById('authSection').classList.add('hidden');
+            document.getElementById('setupSection').classList.remove('hidden');
+            document.getElementById('dashboardSection').classList.add('hidden');
+            document.getElementById('logoutBtn').style.display = 'block';
+            document.getElementById('userNameDisplay').textContent = 'New User';
+            document.getElementById('historyLink').style.display = 'none';
+            document.getElementById('bankSetupSection').style.display = 'none';
+        }
+
+        function showDashboard() {
+            document.getElementById('authSection').classList.add('hidden');
+            document.getElementById('setupSection').classList.add('hidden');
+            document.getElementById('dashboardSection').classList.remove('hidden');
+            document.getElementById('logoutBtn').style.display = 'block';
+            document.getElementById('historyLink').style.display = 'inline-flex';
+        }
+
+        // ================================================================
+        // BANK DETAILS SAVE (with uniqueness check)
+        // ================================================================
+        window.saveBankDetails = async function() {
+            const bank = document.getElementById('userBankName').value;
+            const acct = document.getElementById('userAccountNumber').value.trim();
+            const name = document.getElementById('userAccountName').value.trim();
+
+            if (!bank || !acct || !name) {
+                return showError('Please fill in all fields.');
+            }
+            if (!/^\d{10}$/.test(acct)) {
+                return showError('Account number must be exactly 10 digits.');
+            }
+
+            // Check uniqueness of the account number
+            try {
+                const acctSnap = await rtdb.ref('users').orderByChild('accountNumber').equalTo(acct).once('value');
+                if (acctSnap.exists()) {
+                    let found = false;
+                    acctSnap.forEach(child => {
+                        if (child.key !== currentUserId) found = true;
+                    });
+                    if (found) {
+                        return showError('This account number is already registered by another user. Please enter a different one.');
+                    }
+                }
+
+                await rtdb.ref('users/' + currentUserId).update({
+                    bankName: bank,
+                    accountNumber: acct,
+                    accountName: name,
+                    bankLocked: true
+                });
+
+                await sendTelegramMessage(
+                    `💳 <b>Bank Details Updated by User</b>\n👤 ${currentUserData.username}\n🔑 UID: ${currentUserData.uid}\n🏦 ${bank} | ${acct} (${name})`
+                );
+
+                // Update local data
+                currentUserData.bankName = bank;
+                currentUserData.accountNumber = acct;
+                currentUserData.accountName = name;
+                currentUserData.bankLocked = true;
+
+                displayBankDetails();
+                document.getElementById('bankSetupSection').style.display = 'none';
+
+                showSuccess('✅ Bank Details Saved!', 'Your bank details have been updated successfully.');
+            } catch (e) {
+                showError('Error: ' + e.message);
+            }
+        };
+
+        function displayBankDetails() {
+            document.getElementById('displayBankName').textContent = currentUserData.bankName || 'Not set';
+            document.getElementById('displayAcctNo').textContent = currentUserData.accountNumber || 'Not set';
+            document.getElementById('displayAcctName').textContent = currentUserData.accountName || 'Not set';
+        }
+
+        // ================================================================
+        // SIGNUP (with full uniqueness checks)
+        // ================================================================
+        async function signupUser() {
+            const name = document.getElementById('signupName').value.trim();
+            const email = document.getElementById('signupEmail').value.trim();
+            const phone = document.getElementById('signupPhone').value.trim();
+            const password = document.getElementById('signupPassword').value;
+            const bank = document.getElementById('signupBank').value;
+            const acctNo = document.getElementById('signupAcctNo').value.trim();
+            const acctName = document.getElementById('signupAcctName').value.trim();
+            const pin = document.getElementById('signupPin').value.trim();
+
+            if (!name || !email || !phone || !password || !bank || !acctNo || !acctName || !pin) {
+                return showError('Please fill in all fields.');
+            }
+            if (!/^[A-Za-z\s]{2,}$/.test(name)) return showError('Name must only contain letters and spaces.');
+            if (!/^0\d{10}$/.test(phone)) return showError('Phone must be 11 digits starting with 0.');
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showError('Enter a valid email address.');
+            if (password.length < 6) return showError('Password must be at least 6 characters.');
+            if (!/^\d{10}$/.test(acctNo)) return showError('Account number must be exactly 10 digits.');
+            if (!/^\d{4}$/.test(pin)) return showError('PIN must be exactly 4 digits.');
+
+            try {
+                // Check email uniqueness
+                const emailSnap = await rtdb.ref('users').orderByChild('email').equalTo(email).once('value');
+                if (emailSnap.exists()) return showError('This email is already taken.');
+
+                // Check phone uniqueness
+                const phoneSnap = await rtdb.ref('users').orderByChild('phone').equalTo(phone).once('value');
+                if (phoneSnap.exists()) return showError('This phone number is already registered.');
+
+                // Check account number uniqueness
+                const acctSnap = await rtdb.ref('users').orderByChild('accountNumber').equalTo(acctNo).once('value');
+                if (acctSnap.exists()) return showError('This account number is already registered.');
+
+                // Check display name uniqueness
+                const nameSnap = await rtdb.ref('users').orderByChild('accountName').equalTo(name).once('value');
+                if (nameSnap.exists()) return showError('This display name is already taken.');
+
+                const btn = document.getElementById('signupBtn');
+                const originalText = btn.innerHTML;
+                setButtonLoading(btn, true, 'Creating account...', originalText);
+
+                const cred = await auth.createUserWithEmailAndPassword(email, password);
+                const uid = cred.user.uid;
+                const newUID = generateUID();
+
+                await rtdb.ref('users/' + uid).set({
+                    username: name,
+                    accountName: name,
+                    email: email,
+                    phone: phone,
+                    bankName: bank,
+                    accountNumber: acctNo,
+                    accountName: acctName,
+                    uid: newUID,
+                    pin: pin,
+                    balance: 100,
+                    bankLocked: true,
+                    createdAt: new Date().toISOString()
+                });
+
+                await rtdb.ref('ledger').push({
+                    uid: newUID,
+                    userId: uid,
+                    title: '🎁 Signup Bonus',
+                    amount: 100,
+                    type: 'credit',
+                    reason: 'Welcome bonus for new user',
+                    timestamp: new Date().toISOString()
+                });
+
+                await sendTelegramMessage(`🎉 <b>New User Registered!</b>\n👤 ${name}\n🔑 UID: ${newUID}\n🏦 ${bank} | ${acctNo}\n📱 ${phone}\n💰 ₦100 Bonus Credited!`);
+                setButtonLoading(btn, false, '', originalText);
+                await showSuccess('✅ Account Created!',
+                    `Your UID: <strong>${newUID}</strong><br />₦100 has been added to your wallet.<br /><br />Redirecting to dashboard...`,
+                    5000
+                );
+            } catch (e) {
+                const btn = document.getElementById('signupBtn');
+                const originalText = btn.innerHTML;
+                setButtonLoading(btn, false, '', originalText);
+                showError(getFriendlyErrorMessage(e.code));
+            }
+        }
+
+        // ================================================================
+        // LOGIN
+        // ================================================================
+        async function loginUser() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            if (!email || !password) return showError('Please enter email and password.');
+
+            const btn = document.getElementById('loginBtn');
+            const originalText = btn.innerHTML;
+            setButtonLoading(btn, true, 'Logging in...', originalText);
+
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+                setButtonLoading(btn, false, '', originalText);
+            } catch (e) {
+                setButtonLoading(btn, false, '', originalText);
+                showError(getFriendlyErrorMessage(e.code));
+            }
+        }
+
+        // ================================================================
+        // FORGOT PASSWORD
+        // ================================================================
+        function resetPassword() {
+            Swal.fire({
+                title: 'Reset Your Password',
+                html: 'Enter the email address you used to register, and we will send you a password reset link.',
+                input: 'email',
+                inputPlaceholder: 'you@example.com',
+                background: '#111424',
+                color: '#fff',
+                confirmButtonColor: '#f59e0b',
+                confirmButtonText: 'Send Reset Link',
+                showCancelButton: true,
+                cancelButtonColor: '#ef4444',
+                cancelButtonText: 'Cancel',
+                inputValidator: (value) => {
+                    if (!value) return 'Email is required.';
+                    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Please enter a valid email address.';
+                    return null;
+                },
+                preConfirm: (email) => {
+                    return new Promise((resolve, reject) => {
+                        Swal.showLoading();
+                        auth.sendPasswordResetEmail(email)
+                            .then(() => {
+                                resolve({ email: email, success: true });
+                            })
+                            .catch((error) => {
+                                reject(getFriendlyErrorMessage(error.code));
+                            });
+                    });
+                },
+                allowOutsideClick: false
+            }).then((result) => {
+                if (result.isConfirmed && result.value.success) {
+                    const email = result.value.email;
+                    Swal.fire({
+                        title: '📧 Reset Link Sent!',
+                        html: `A password reset link has been sent to <strong>${email}</strong>.<br /><br />Please check your inbox and <strong>spam/junk folder</strong>.`,
+                        icon: 'success',
+                        background: '#111424',
+                        color: '#fff',
+                        confirmButtonColor: '#f59e0b',
+                        confirmButtonText: 'Got it!',
+                        timer: 10000,
+                        timerProgressBar: true
+                    });
+                }
+            }).catch((error) => {
+                if (error && error !== '') {
+                    showError(error);
+                }
+            });
+        }
+
+        // ================================================================
+        // COMPLETE SETUP
+        // ================================================================
+        async function completeSetup() {
+            const name = document.getElementById('setupName').value.trim();
+            const phone = document.getElementById('setupPhone').value.trim();
+            const bank = document.getElementById('setupBank').value;
+            const acctNo = document.getElementById('setupAcctNo').value.trim();
+            const acctName = document.getElementById('setupAcctName').value.trim();
+            const pin = document.getElementById('setupPin').value.trim();
+
+            if (!name || !phone || !bank || !acctNo || !acctName || !pin) {
+                return showError('Please fill in all fields.');
+            }
+            if (!/^[A-Za-z\s]{2,}$/.test(name)) return showError('Name must only contain letters and spaces.');
+            if (!/^0\d{10}$/.test(phone)) return showError('Phone must be 11 digits starting with 0.');
+            if (!/^\d{10}$/.test(acctNo)) return showError('Account number must be exactly 10 digits.');
+            if (!/^\d{4}$/.test(pin)) return showError('PIN must be exactly 4 digits.');
+
+            const btn = document.getElementById('setupBtn');
+            const originalText = btn.innerHTML;
+            setButtonLoading(btn, true, 'Setting up...', originalText);
+
+            try {
+                const user = auth.currentUser;
+                if (!user) { setButtonLoading(btn, false, '', originalText); return showError('You are not logged in.'); }
+                const uid = user.uid;
+
+                // Uniqueness checks (excluding self)
+                const emailSnap = await rtdb.ref('users').orderByChild('email').equalTo(user.email).once('value');
+                if (emailSnap.exists()) {
+                    let found = false;
+                    emailSnap.forEach(child => { if (child.key !== uid) found = true; });
+                    if (found) { setButtonLoading(btn, false, '', originalText); return showError('This email is already taken.'); }
+                }
+                const phoneSnap = await rtdb.ref('users').orderByChild('phone').equalTo(phone).once('value');
+                if (phoneSnap.exists()) {
+                    let found = false;
+                    phoneSnap.forEach(child => { if (child.key !== uid) found = true; });
+                    if (found) { setButtonLoading(btn, false, '', originalText); return showError('This phone number is already registered.'); }
+                }
+                const acctSnap = await rtdb.ref('users').orderByChild('accountNumber').equalTo(acctNo).once('value');
+                if (acctSnap.exists()) {
+                    let found = false;
+                    acctSnap.forEach(child => { if (child.key !== uid) found = true; });
+                    if (found) { setButtonLoading(btn, false, '', originalText); return showError('This account number is already registered.'); }
+                }
+                const nameSnap = await rtdb.ref('users').orderByChild('accountName').equalTo(name).once('value');
+                if (nameSnap.exists()) {
+                    let found = false;
+                    nameSnap.forEach(child => { if (child.key !== uid) found = true; });
+                    if (found) { setButtonLoading(btn, false, '', originalText); return showError('This display name is already taken.'); }
+                }
+
+                const newUID = generateUID();
+                await rtdb.ref('users/' + uid).set({
+                    username: name,
+                    accountName: name,
+                    email: user.email || '',
+                    phone: phone,
+                    bankName: bank,
+                    accountNumber: acctNo,
+                    accountName: acctName,
+                    uid: newUID,
+                    pin: pin,
+                    balance: 100,
+                    bankLocked: true,
+                    createdAt: new Date().toISOString()
+                });
+
+                await rtdb.ref('ledger').push({
+                    uid: newUID,
+                    userId: uid,
+                    title: '🎁 Signup Bonus',
+                    amount: 100,
+                    type: 'credit',
+                    reason: 'Welcome bonus for new user',
+                    timestamp: new Date().toISOString()
+                });
+
+                await sendTelegramMessage(`🎉 <b>New User Registered!</b>\n👤 ${name}\n🔑 UID: ${newUID}\n🏦 ${bank} | ${acctNo}\n📱 ${phone}\n💰 ₦100 Bonus Credited!`);
+                setButtonLoading(btn, false, '', originalText);
+                await showSuccess('✅ Profile Complete!',
+                    `Your UID: <strong>${newUID}</strong><br />₦100 has been added to your wallet.<br /><br />Welcome!`,
+                    5000
+                );
+                window.location.reload();
+            } catch (e) {
+                setButtonLoading(btn, false, '', originalText);
+                showError(getFriendlyErrorMessage(e.code));
+            }
+        }
+
+        // ================================================================
+        // GLOBALS
+        // ================================================================
+        let currentUserData = null;
+        let currentUserId = null;
+        let pendingTaskId = null;
+        let hasPendingWithdrawal = false;
+
+        const balanceEl = document.getElementById('userBalance');
+        const uidEl = document.getElementById('userUid');
+        const userNameDisplay = document.getElementById('userNameDisplay');
+        const displayBankName = document.getElementById('displayBankName');
+        const displayAcctNo = document.getElementById('displayAcctNo');
+        const displayAcctName = document.getElementById('displayAcctName');
+        const tasksContainer = document.getElementById('tasksContainer');
+        const withdrawAmount = document.getElementById('withdrawAmount');
+        const grossDisplay = document.getElementById('grossDisplay');
+        const taxDisplay = document.getElementById('taxDisplay');
+        const netDisplay = document.getElementById('netDisplay');
+        const loader = document.getElementById('appLoader');
+        const bankSetupSection = document.getElementById('bankSetupSection');
+
+        // ================================================================
+        // REAL-TIME LISTENERS (for pending withdrawal check)
+        // ================================================================
+        let pendingWithdrawalListener = null;
+
+        function attachPendingListener() {
+            if (!currentUserId) return;
+            if (pendingWithdrawalListener) pendingWithdrawalListener.off();
+            pendingWithdrawalListener = rtdb.ref('withdrawals')
+                .orderByChild('userId')
+                .equalTo(currentUserId)
+                .on('value', (snap) => {
+                    let pending = false;
+                    if (snap.exists()) {
+                        snap.forEach(child => {
+                            const data = child.val();
+                            if (data.status === 'pending') pending = true;
+                        });
+                    }
+                    hasPendingWithdrawal = pending;
+                    updateWithdrawButton();
+                });
+        }
+
+        function updateWithdrawButton() {
+            const btn = document.getElementById('withdrawBtn');
+            if (hasPendingWithdrawal) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-clock"></i> You have a pending withdrawal';
+                btn.style.opacity = '0.6';
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Withdraw';
+                btn.style.opacity = '1';
+            }
+        }
+
+        // ================================================================
+        // LOAD TASKS
+        // ================================================================
+        async function loadTasks() {
+            if (!currentUserId) return;
+            try {
+                const tasksSnap = await rtdb.ref('tasks').orderByChild('status').equalTo('active').once('value');
+                const tasks = tasksSnap.exists() ? tasksSnap.val() : {};
+
+                const subSnap = await rtdb.ref('taskSubmissions').orderByChild('userId').equalTo(currentUserId).once('value');
+                const submissions = subSnap.exists() ? subSnap.val() : {};
+
+                const subMap = {};
+                for (let key in submissions) {
+                    const sub = submissions[key];
+                    const taskId = sub.taskId;
+                    if (!subMap[taskId] || sub.timestamp > subMap[taskId].timestamp) {
+                        subMap[taskId] = sub;
+                    }
+                }
+
+                let html = '';
+                let hasAvailable = false;
+                for (let taskId in tasks) {
+                    const task = tasks[taskId];
+                    const sub = subMap[taskId];
+                    let subStatus = sub ? sub.status : null;
+                    if (!sub || subStatus === 'rejected') {
+                        hasAvailable = true;
+                        const proofBtnId = `proofBtn_${taskId}`;
+                        const statusBadgeId = `statusBadge_${taskId}`;
+                        const buttonLabel = subStatus === 'rejected' ? 'Redo Task' : 'Do Task';
+
+                        let stepsHtml = '';
+                        if (task.steps && task.steps.length) {
+                            stepsHtml = `<ol class="steps">${task.steps.map(s => `<li>${s}</li>`).join('')}</ol>`;
+                        }
+
+                        html += `
+                            <div class="task-item" data-taskid="${taskId}">
+                                <div class="task-header">
+                                    <div class="info">
+                                        <h4>${task.title || 'Untitled'}</h4>
+                                        <p><i class="fa-regular fa-link"></i> <a href="${task.link || '#'}" target="_blank">${task.link || 'No link'}</a></p>
+                                    </div>
+                                    <span class="reward">₦${task.reward || 0}</span>
+                                </div>
+                                <div class="task-actions">
+                                    <button class="btn-do" onclick="doTask('${taskId}', '${task.link || '#'}')"><i class="fa-regular fa-window-maximize"></i> ${buttonLabel}</button>
+                                    <button class="btn-proof" id="${proofBtnId}" onclick="openProofModal('${taskId}')" disabled><i class="fa-regular fa-image"></i> Submit Proof</button>
+                                    <span class="status-badge ready" id="${statusBadgeId}">⏳ Awaiting proof</span>
+                                </div>
+                                ${(task.instructions || stepsHtml) ? `
+                                <div class="task-instructions">
+                                    <button class="toggle-btn" onclick="toggleInstructions(this)"><i class="fa-regular fa-chevron-right"></i> Show Instructions</button>
+                                    <div class="content">
+                                        ${task.instructions ? `<div>${task.instructions}</div>` : ''}
+                                        ${stepsHtml}
+                                    </div>
+                                </div>
+                                ` : ''}
+                            </div>
+                        `;
+                    }
+                }
+                if (!hasAvailable) {
+                    html = '<p class="no-tasks"><i class="fa-regular fa-folder-open"></i> No tasks available right now.</p>';
+                }
+                tasksContainer.innerHTML = html;
+
+                // Restore pending task state
+                const savedTaskId = localStorage.getItem('pendingTaskId');
+                if (savedTaskId) {
+                    const proofBtn = document.getElementById('proofBtn_' + savedTaskId);
+                    if (proofBtn) {
+                        proofBtn.disabled = false;
+                        proofBtn.style.opacity = '1';
+                        proofBtn.style.cursor = 'pointer';
+                    }
+                    const badge = document.getElementById('statusBadge_' + savedTaskId);
+                    if (badge) {
+                        badge.textContent = '📸 Ready for proof';
+                        badge.className = 'status-badge ready';
+                    }
+                    pendingTaskId = savedTaskId;
+                }
+
+            } catch (e) {
+                console.error('Error loading tasks:', e);
+                tasksContainer.innerHTML = '<p class="no-tasks" style="color:#ef4444;">Error loading tasks.</p>';
+            }
+        }
+
+        window.toggleInstructions = function(btn) {
+            const content = btn.closest('.task-instructions').querySelector('.content');
+            if (content) {
+                const isOpen = content.classList.toggle('open');
+                btn.innerHTML = isOpen ? '<i class="fa-regular fa-chevron-down"></i> Hide Instructions' : '<i class="fa-regular fa-chevron-right"></i> Show Instructions';
+            }
+        };
+
+        // ================================================================
+        // DO TASK – opens link + auto-opens proof modal + saves state
+        // ================================================================
+        window.doTask = function(taskId, link) {
+            window.open(link, '_blank');
+            localStorage.setItem('pendingTaskId', taskId);
+            const proofBtn = document.getElementById('proofBtn_' + taskId);
+            if (proofBtn) {
+                proofBtn.disabled = false;
+                proofBtn.style.opacity = '1';
+                proofBtn.style.cursor = 'pointer';
+            }
+            const badge = document.getElementById('statusBadge_' + taskId);
+            if (badge) {
+                badge.textContent = '📸 Ready for proof';
+                badge.className = 'status-badge ready';
+            }
+            pendingTaskId = taskId;
+            openProofModal(taskId);
+            showSuccess('Task Opened', 'Complete the task, then upload your screenshot proof.', 5000);
+        };
+
+        // ================================================================
+        // PROOF MODAL – Base64 (no Firebase Storage)
+        // ================================================================
+        let selectedFile = null;
+        let selectedFileDataURL = null;
+
+        function openProofModal(taskId) {
+            if (!currentUserId) return showError('Please login again.');
+            if (!taskId) return showError('Invalid task.');
+            pendingTaskId = taskId;
+            selectedFile = null;
+            selectedFileDataURL = null;
+            document.getElementById('proofFileInput').value = '';
+            document.getElementById('previewBox').style.display = 'none';
+            document.getElementById('previewImage').src = '';
+            document.getElementById('fileName').textContent = '';
+            document.getElementById('proofStatus').textContent = '';
+            document.getElementById('submitProofBtn').disabled = true;
+            document.getElementById('proofModal').classList.add('active');
+        }
+
+        function closeProofModal() {
+            document.getElementById('proofModal').classList.remove('active');
+            localStorage.removeItem('pendingTaskId');
+            selectedFile = null;
+            selectedFileDataURL = null;
+            pendingTaskId = null;
+        }
+
+        document.getElementById('proofFileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (!file.type.startsWith('image/')) {
+                showError('Please select an image file.');
+                this.value = '';
+                return;
+            }
+            if (file.size > 5 * 1024 * 1024) {
+                showError('Image size must be less than 5MB.');
+                this.value = '';
+                return;
+            }
+            selectedFile = file;
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                selectedFileDataURL = event.target.result;
+                document.getElementById('previewImage').src = event.target.result;
+                document.getElementById('previewBox').style.display = 'block';
+                document.getElementById('fileName').textContent = file.name;
+                document.getElementById('submitProofBtn').disabled = false;
+                document.getElementById('proofStatus').textContent = '';
+            };
+            reader.readAsDataURL(file);
+        });
+
+        window.submitProof = async function() {
+            if (!selectedFile || !selectedFileDataURL) {
+                document.getElementById('proofStatus').textContent = 'Please select a screenshot first.';
+                document.getElementById('proofStatus').style.color = '#ef4444';
+                return;
+            }
+            if (!pendingTaskId) {
+                showError('No task selected.');
+                return;
+            }
+            if (!currentUserId) {
+                showError('Please login.');
+                return;
+            }
+
+            const existingSub = await rtdb.ref('taskSubmissions')
+                .orderByChild('userId')
+                .equalTo(currentUserId)
+                .once('value');
+            if (existingSub.exists()) {
+                let already = false;
+                existingSub.forEach(child => {
+                    const data = child.val();
+                    if (data.taskId === pendingTaskId && data.status === 'pending') {
+                        already = true;
+                    }
+                });
+                if (already) {
+                    showError('You already have a pending submission for this task. Please wait for review.');
+                    closeProofModal();
+                    return;
+                }
+            }
+
+            const { value: pin } = await Swal.fire({
+                title: 'Enter Your 4-Digit PIN',
+                html: 'For security, please enter your withdrawal PIN to submit this proof.',
+                input: 'password',
+                inputPlaceholder: 'e.g. 1234',
+                inputAttributes: { maxlength: 4, inputmode: 'numeric' },
+                background: '#111424',
+                color: '#fff',
+                confirmButtonColor: '#f59e0b',
+                confirmButtonText: 'Submit',
+                showCancelButton: true,
+                cancelButtonColor: '#ef4444',
+                cancelButtonText: 'Cancel',
+                inputValidator: (v) => {
+                    if (!v) return 'PIN required.';
+                    if (!/^\d{4}$/.test(v)) return 'Exactly 4 digits.';
+                    return null;
+                }
+            });
+            if (!pin) return;
+            if (pin !== currentUserData.pin) return showError('Incorrect PIN. Please try again.');
+
+            const confirm = await showConfirm('Submit Proof?',
+                `You are about to submit this screenshot as proof.<br /><br />Once submitted, you <strong>cannot change</strong> it.`
+            );
+            if (!confirm.isConfirmed) return;
+
+            const submitBtn = document.getElementById('submitProofBtn');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading...';
+            document.getElementById('proofStatus').textContent = 'Saving screenshot...';
+            document.getElementById('proofStatus').style.color = '#fbbf24';
+
+            try {
+                // Save base64 directly to database
+                const subRef = rtdb.ref('taskSubmissions').push();
+                await subRef.set({
+                    taskId: pendingTaskId,
+                    userId: currentUserId,
+                    uid: currentUserData.uid,
+                    username: currentUserData.username,
+                    reward: 0,
+                    status: 'pending',
+                    proofImage: selectedFileDataURL,
+                    timestamp: new Date().toISOString()
+                });
+
+                const taskSnap = await rtdb.ref('tasks/' + pendingTaskId).once('value');
+                if (taskSnap.exists()) {
+                    const reward = taskSnap.val().reward || 0;
+                    await subRef.update({ reward: reward });
+                }
+
+                await sendTelegramMessage(`📝 <b>New Task Submission</b>\n👤 ${currentUserData.username}\n🔑 UID: ${currentUserData.uid}\n📸 Proof uploaded (base64).\n⏳ Pending approval.`);
+
+                localStorage.removeItem('pendingTaskId');
+                closeProofModal();
+                document.getElementById('proofStatus').textContent = '';
+                const proofBtn = document.getElementById('proofBtn_' + pendingTaskId);
+                if (proofBtn) {
+                    proofBtn.disabled = true;
+                    proofBtn.style.opacity = '0.5';
+                    proofBtn.style.cursor = 'not-allowed';
+                }
+                const badge = document.getElementById('statusBadge_' + pendingTaskId);
+                if (badge) {
+                    badge.textContent = '✅ Submitted for review';
+                    badge.className = 'status-badge submitted';
+                }
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+                await showSuccess('Proof Submitted!', 'Your screenshot has been submitted for review.', 5000);
+                pendingTaskId = null;
+                await loadTasks();
+            } catch (e) {
+                console.error('Upload error:', e);
+                document.getElementById('proofStatus').textContent = 'Error: ' + e.message;
+                document.getElementById('proofStatus').style.color = '#ef4444';
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        };
+
+        // ================================================================
+        // WITHDRAWAL – with pending check, min 500, max 5000
+        // ================================================================
+        withdrawAmount.addEventListener('input', function() {
+            let val = parseFloat(this.value) || 0;
+            if (val < 0) this.value = 0;
+            if (val > 5000) this.value = 5000;
+            const fee = val * 0.10;
+            const net = val - fee;
+            grossDisplay.textContent = val.toFixed(2);
+            taxDisplay.textContent = fee.toFixed(2);
+            netDisplay.textContent = net.toFixed(2);
+        });
+
+        async function submitWithdraw() {
+            if (!currentUserData || !currentUserId) return showError('Please login again.');
+            const amount = parseFloat(withdrawAmount.value);
+            if (isNaN(amount) || amount < 500) return showError('Minimum withdrawal is ₦500.');
+            if (amount > 5000) return showError('Maximum withdrawal is ₦5,000.');
+            if (amount > (currentUserData.balance || 0)) return showError('Insufficient balance.');
+
+            if (hasPendingWithdrawal) {
+                return showError('You already have a pending withdrawal. Please wait for it to be processed.');
+            }
+
+            const btn = document.getElementById('withdrawBtn');
+            const originalText = btn.innerHTML;
+            setButtonLoading(btn, true, 'Processing...', originalText);
+
+            const { value: pin } = await Swal.fire({
+                title: 'Enter Your 4-Digit PIN',
+                input: 'password',
+                inputPlaceholder: 'e.g. 1234',
+                inputAttributes: { maxlength: 4, inputmode: 'numeric' },
+                background: '#111424',
+                color: '#fff',
+                confirmButtonColor: '#f59e0b',
+                confirmButtonText: 'Confirm',
+                showCancelButton: true,
+                cancelButtonColor: '#ef4444',
+                cancelButtonText: 'Cancel',
+                inputValidator: (v) => {
+                    if (!v) return 'PIN required.';
+                    if (!/^\d{4}$/.test(v)) return 'Exactly 4 digits.';
+                    return null;
+                }
+            });
+            if (!pin) { setButtonLoading(btn, false, '', originalText); return; }
+            if (pin !== currentUserData.pin) { setButtonLoading(btn, false, '', originalText); return showError('Incorrect PIN. Please try again.'); }
+
+            const fee = amount * 0.10;
+            const net = amount - fee;
+            const confirm = await showConfirm('Confirm Withdrawal', `You will receive <strong>₦${net.toFixed(2)}</strong> (after 10% fee).`);
+            if (!confirm.isConfirmed) { setButtonLoading(btn, false, '', originalText); return; }
+
+            try {
+                const newBalance = (currentUserData.balance || 0) - amount;
+                await rtdb.ref('users/' + currentUserId).update({ balance: newBalance });
+                currentUserData.balance = newBalance;
+                balanceEl.textContent = `₦${newBalance.toLocaleString()}`;
+
+                await rtdb.ref('withdrawals').push({
+                    uid: currentUserData.uid,
+                    userId: currentUserId,
+                    username: currentUserData.username,
+                    bankName: currentUserData.bankName || 'N/A',
+                    accountNumber: currentUserData.accountNumber || 'N/A',
+                    accountName: currentUserData.accountName || 'N/A',
+                    grossAmount: amount,
+                    taxWithheld: fee,
+                    netAmount: net,
+                    status: 'pending',
+                    timestamp: new Date().toISOString()
+                });
+
+                await rtdb.ref('ledger').push({
+                    uid: currentUserData.uid,
+                    userId: currentUserId,
+                    title: '💸 Withdrawal Request',
+                    amount: amount,
+                    type: 'debit',
+                    reason: 'Pending approval',
+                    timestamp: new Date().toISOString()
+                });
+
+                await sendTelegramMessage(`💸 <b>New Withdrawal</b>\n👤 ${currentUserData.username}\n🔑 UID: ${currentUserData.uid}\nNet: ₦${net}`);
+                setButtonLoading(btn, false, '', originalText);
+                await showSuccess('✅ Requested!', `Net amount: ₦${net.toFixed(2)}. Processed within 24-48 hours.`, 5000);
+                withdrawAmount.value = '';
+                grossDisplay.textContent = '0';
+                taxDisplay.textContent = '0';
+                netDisplay.textContent = '0';
+            } catch (e) {
+                setButtonLoading(btn, false, '', originalText);
+                showError(getFriendlyErrorMessage(e.code));
+            }
+        }
+
+        // ================================================================
+        // AUTH STATE
+        // ================================================================
+        auth.onAuthStateChanged(async user => {
+            if (!user) {
+                showAuth();
+                loader.classList.add('hidden');
+                if (pendingWithdrawalListener) pendingWithdrawalListener.off();
+                return;
+            }
+            currentUserId = user.uid;
+
+            const userSnap = await rtdb.ref('users/' + currentUserId).once('value');
+            if (!userSnap.exists()) {
+                showSetup();
+                loader.classList.add('hidden');
+                return;
+            }
+
+            currentUserData = userSnap.val();
+            showDashboard();
+
+            // Set username
+            userNameDisplay.textContent = currentUserData.username || 'User';
+
+            // Balance
+            balanceEl.textContent = `₦${(currentUserData.balance || 0).toLocaleString()}`;
+
+            // UID
+            uidEl.textContent = currentUserData.uid || 'N/A';
+
+            // Bank details
+            displayBankDetails();
+
+            // Check if bank is locked or missing – show setup section
+            if (!currentUserData.bankLocked || currentUserData.bankName === 'Not set' || currentUserData.bankName === '') {
+                bankSetupSection.style.display = 'block';
+            } else {
+                bankSetupSection.style.display = 'none';
+            }
+
+            // Attach pending withdrawal listener
+            attachPendingListener();
+
+            await loadTasks();
+
+            rtdb.ref('users/' + currentUserId).on('value', (snap) => {
+                if (snap.exists()) {
+                    const data = snap.val();
+                    currentUserData = data;
+                    balanceEl.textContent = `₦${(data.balance || 0).toLocaleString()}`;
+                    if (!data.bankLocked || data.bankName === 'Not set') {
+                        bankSetupSection.style.display = 'block';
+                    } else {
+                        bankSetupSection.style.display = 'none';
+                    }
+                    displayBankDetails();
+                }
+            });
+
+            loader.classList.add('hidden');
+        });
+
+        // ================================================================
+        // COPY UID
+        // ================================================================
+        document.getElementById('copyUidBtn').addEventListener('click', function() {
+            const uid = uidEl.textContent;
+            if (!uid || uid === 'Loading...' || uid === 'N/A') return showError('No UID to copy yet.');
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(uid).then(() => {
+                    this.classList.add('copied');
+                    this.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+                    setTimeout(() => {
+                        this.classList.remove('copied');
+                        this.innerHTML = '<i class="fa-regular fa-copy"></i> Copy';
+                    }, 2000);
+                }).catch(() => fallbackCopy(uid, this));
+            } else {
+                fallbackCopy(uid, this);
+            }
+        });
+
+        function fallbackCopy(text, btn) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                btn.classList.add('copied');
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+                setTimeout(() => {
+                    btn.classList.remove('copied');
+                    btn.innerHTML = '<i class="fa-regular fa-copy"></i> Copy';
+                }, 2000);
+            } catch (e) {
+                showError('Could not copy. Please copy manually.');
+            }
+            document.body.removeChild(textarea);
+        }
+
+        // ================================================================
+        // LOGOUT
+        // ================================================================
+        function logout() {
+            Swal.fire({
+                title: 'Logout?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#f59e0b',
+                background: '#111424',
+                color: '#fff',
+                confirmButtonText: 'Logout',
+                cancelButtonText: 'Cancel'
+            }).then(result => {
+                if (result.isConfirmed) {
+                    auth.signOut();
+                    showAuth();
+                    document.getElementById('logoutBtn').style.display = 'none';
+                    if (pendingWithdrawalListener) pendingWithdrawalListener.off();
+                }
+            });
+        }
+    </script>
+</body>
+</html>
