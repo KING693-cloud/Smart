@@ -79,9 +79,7 @@
             animation: spin 1s linear infinite;
         }
         @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
+            to { transform: rotate(360deg); }
         }
         .app-loader p {
             color: #9ca3af;
@@ -753,6 +751,81 @@
             color: #9ca3af;
         }
 
+        /* ----- RUSH GIFT CARD REDEMPTION ----- */
+        .rush-card-box {
+            background: #161a2e;
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid rgba(245, 158, 11, 0.15);
+            margin-bottom: 20px;
+        }
+        .rush-card-box p {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            margin-bottom: 12px;
+        }
+        .rush-card-box .input-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .rush-card-box .input-group input {
+            flex: 2;
+            background: #0b0d17;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            padding: 12px 16px;
+            color: #fff;
+            font-size: 0.95rem;
+            outline: none;
+            text-transform: uppercase;
+        }
+        .rush-card-box .input-group input:focus {
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.08);
+        }
+        .rush-card-box .input-group input::placeholder {
+            color: #4a5568;
+            text-transform: none;
+        }
+        .rush-card-box .input-group button {
+            flex: 0 0 auto;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            border: none;
+            border-radius: 10px;
+            font-weight: 800;
+            color: #111424;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .rush-card-box .input-group button:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 20px rgba(245, 158, 11, 0.3);
+        }
+        .rush-card-box .input-group button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .rush-card-box .feedback {
+            margin-top: 10px;
+            font-size: 0.85rem;
+        }
+        .rush-card-box .feedback.success {
+            color: #10b981;
+        }
+        .rush-card-box .feedback.error {
+            color: #ef4444;
+        }
+        .rush-card-box .feedback.loading {
+            color: #fbbf24;
+        }
+
         /* ----- PROOF MODAL (Base64) ----- */
         .proof-modal {
             display: none;
@@ -1010,6 +1083,13 @@
             }
             .uid-box .uid-value {
                 font-size: 1rem;
+            }
+            .rush-card-box .input-group {
+                flex-direction: column;
+            }
+            .rush-card-box .input-group button {
+                width: 100%;
+                justify-content: center;
             }
         }
     </style>
@@ -1290,6 +1370,17 @@
             <!-- Tasks -->
             <div class="section-title"><i class="fa-solid fa-list-check"></i> Available Tasks</div>
             <div id="tasksContainer"><p class="no-tasks"><i class="fa-solid fa-spinner fa-pulse"></i> Loading...</p></div>
+
+            <!-- ===== RUSH GIFT CARD REDEMPTION ===== -->
+            <div class="section-title" style="margin-top:20px;"><i class="fa-solid fa-gift"></i> Redeem Gift Card</div>
+            <div class="rush-card-box">
+                <p>Enter your 6‑character gift card code to claim your reward. Codes are first‑come, first‑served.</p>
+                <div class="input-group">
+                    <input type="text" id="giftCodeInput" placeholder="Enter code (e.g. 3PTWFY)" maxlength="6" autocomplete="off" spellcheck="false" />
+                    <button id="redeemGiftBtn" onclick="redeemGiftCard()"><i class="fa-solid fa-gift"></i> Redeem</button>
+                </div>
+                <div id="giftRedeemFeedback" class="feedback"></div>
+            </div>
 
             <!-- Withdraw -->
             <div class="withdraw-section">
@@ -2168,6 +2259,183 @@
                 document.getElementById('proofStatus').style.color = '#ef4444';
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
+            }
+        };
+
+        // ================================================================
+        // RUSH GIFT CARD REDEMPTION
+        // ================================================================
+        window.redeemGiftCard = async function() {
+            const codeInput = document.getElementById('giftCodeInput');
+            const code = codeInput.value.trim().toUpperCase();
+            const feedback = document.getElementById('giftRedeemFeedback');
+            const btn = document.getElementById('redeemGiftBtn');
+
+            if (!code || code.length !== 6) {
+                feedback.className = 'feedback error';
+                feedback.textContent = '❌ Please enter a valid 6‑character code.';
+                return;
+            }
+
+            if (!currentUserData || !currentUserId) {
+                feedback.className = 'feedback error';
+                feedback.textContent = '❌ You must be logged in to redeem.';
+                return;
+            }
+
+            // Check if user already redeemed this code?
+            // We'll query the gift card first.
+
+            setButtonLoading(btn, true, 'Checking...', '<i class="fa-solid fa-gift"></i> Redeem');
+
+            try {
+                const cardSnap = await rtdb.ref('giftCards/' + code).once('value');
+                if (!cardSnap.exists()) {
+                    feedback.className = 'feedback error';
+                    feedback.textContent = '❌ Invalid gift card code.';
+                    setButtonLoading(btn, false, '', '<i class="fa-solid fa-gift"></i> Redeem');
+                    return;
+                }
+
+                const card = cardSnap.val();
+                const now = Date.now();
+                const expiry = new Date(card.expiry).getTime();
+                if (expiry < now) {
+                    feedback.className = 'feedback error';
+                    feedback.textContent = '❌ This gift card has expired.';
+                    setButtonLoading(btn, false, '', '<i class="fa-solid fa-gift"></i> Redeem');
+                    return;
+                }
+
+                if (card.usedCount >= card.maxUsers) {
+                    feedback.className = 'feedback error';
+                    feedback.textContent = '❌ This gift card has been fully redeemed.';
+                    setButtonLoading(btn, false, '', '<i class="fa-solid fa-gift"></i> Redeem');
+                    return;
+                }
+
+                // Check if this user already redeemed this code
+                const usedBy = card.usedBy || [];
+                const alreadyUsed = usedBy.some(entry => {
+                    if (typeof entry === 'string') return entry === currentUserData.uid;
+                    return entry.uid === currentUserData.uid;
+                });
+                if (alreadyUsed) {
+                    feedback.className = 'feedback error';
+                    feedback.textContent = '❌ You have already redeemed this gift card.';
+                    setButtonLoading(btn, false, '', '<i class="fa-solid fa-gift"></i> Redeem');
+                    return;
+                }
+
+                // Determine the amount for this user (first come first served)
+                const distribution = card.distribution || [];
+                const nextIndex = card.usedCount || 0;
+                if (nextIndex >= distribution.length) {
+                    feedback.className = 'feedback error';
+                    feedback.textContent = '❌ Something went wrong (distribution mismatch).';
+                    setButtonLoading(btn, false, '', '<i class="fa-solid fa-gift"></i> Redeem');
+                    return;
+                }
+                const rewardAmount = distribution[nextIndex].amount || 0;
+
+                // Ask for PIN
+                const { value: pin } = await Swal.fire({
+                    title: 'Enter Your 4-Digit PIN',
+                    input: 'password',
+                    inputPlaceholder: 'e.g. 1234',
+                    inputAttributes: { maxlength: 4, inputmode: 'numeric' },
+                    background: '#111424',
+                    color: '#fff',
+                    confirmButtonColor: '#f59e0b',
+                    confirmButtonText: 'Confirm',
+                    showCancelButton: true,
+                    cancelButtonColor: '#ef4444',
+                    cancelButtonText: 'Cancel',
+                    inputValidator: (v) => {
+                        if (!v) return 'PIN required.';
+                        if (!/^\d{4}$/.test(v)) return 'Exactly 4 digits.';
+                        return null;
+                    }
+                });
+                if (!pin) { setButtonLoading(btn, false, '', '<i class="fa-solid fa-gift"></i> Redeem'); return; }
+                if (pin !== currentUserData.pin) {
+                    feedback.className = 'feedback error';
+                    feedback.textContent = '❌ Incorrect PIN.';
+                    setButtonLoading(btn, false, '', '<i class="fa-solid fa-gift"></i> Redeem');
+                    return;
+                }
+
+                // Double‑check again (avoid race conditions)
+                const cardSnap2 = await rtdb.ref('giftCards/' + code).once('value');
+                if (!cardSnap2.exists()) {
+                    feedback.className = 'feedback error';
+                    feedback.textContent = '❌ Gift card no longer exists.';
+                    setButtonLoading(btn, false, '', '<i class="fa-solid fa-gift"></i> Redeem');
+                    return;
+                }
+                const card2 = cardSnap2.val();
+                if (card2.usedCount >= card2.maxUsers) {
+                    feedback.className = 'feedback error';
+                    feedback.textContent = '❌ This gift card has been fully redeemed by someone else.';
+                    setButtonLoading(btn, false, '', '<i class="fa-solid fa-gift"></i> Redeem');
+                    return;
+                }
+                const usedBy2 = card2.usedBy || [];
+                if (usedBy2.some(entry => entry.uid === currentUserData.uid)) {
+                    feedback.className = 'feedback error';
+                    feedback.textContent = '❌ You already redeemed this gift card.';
+                    setButtonLoading(btn, false, '', '<i class="fa-solid fa-gift"></i> Redeem');
+                    return;
+                }
+
+                // Proceed: credit user
+                const newBalance = (currentUserData.balance || 0) + rewardAmount;
+                await rtdb.ref('users/' + currentUserId).update({ balance: newBalance });
+                currentUserData.balance = newBalance;
+                balanceEl.textContent = `₦${newBalance.toLocaleString()}`;
+
+                // Update card: increment usedCount, add to usedBy
+                const newUsedCount = (card2.usedCount || 0) + 1;
+                const newUsedBy = [...usedBy2, {
+                    uid: currentUserData.uid,
+                    username: currentUserData.username,
+                    amount: rewardAmount,
+                    timestamp: new Date().toISOString()
+                }];
+                await rtdb.ref('giftCards/' + code).update({
+                    usedCount: newUsedCount,
+                    usedBy: newUsedBy
+                });
+
+                // Add ledger entry
+                await rtdb.ref('ledger').push({
+                    uid: currentUserData.uid,
+                    userId: currentUserId,
+                    title: `🎁 Gift Card Redemption (${code})`,
+                    amount: rewardAmount,
+                    type: 'credit',
+                    reason: `Redeemed rush card ${code}`,
+                    timestamp: new Date().toISOString()
+                });
+
+                // Send Telegram notification
+                await sendTelegramMessage(
+                    `🎫 <b>Gift Card Redeemed</b>\n👤 ${currentUserData.username}\n🔑 UID: ${currentUserData.uid}\n💰 Amount: ₦${rewardAmount}\n📇 Code: ${code}`
+                );
+
+                feedback.className = 'feedback success';
+                feedback.textContent = `✅ Success! You received ₦${rewardAmount.toLocaleString()} from gift card ${code}.`;
+                codeInput.value = '';
+                setButtonLoading(btn, false, '', '<i class="fa-solid fa-gift"></i> Redeem');
+
+                // Refresh stats and UI
+                showSuccess('🎉 Gift Card Redeemed!', `You received ₦${rewardAmount.toLocaleString()}. Your balance has been updated.`, 5000);
+
+            } catch (e) {
+                console.error('Redeem error:', e);
+                feedback.className = 'feedback error';
+                feedback.textContent = '❌ Error: ' + e.message;
+                setButtonLoading(btn, false, '', '<i class="fa-solid fa-gift"></i> Redeem');
             }
         };
 
