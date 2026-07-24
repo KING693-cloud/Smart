@@ -947,7 +947,7 @@
             cursor: not-allowed;
         }
 
-        /* ----- WITHDRAW SECTION ----- */
+        /* ----- WITHDRAW SECTION (UPDATED: dynamic tax & min) ----- */
         .withdraw-section {
             background: #161a2e;
             border-radius: 20px;
@@ -1056,6 +1056,64 @@
             text-align: center;
         }
 
+        /* ----- TELEGRAM CHANNEL SECTION (NEW) ----- */
+        .telegram-channel-box {
+            background: linear-gradient(145deg, #161a2e, #1b203a);
+            border-radius: 20px;
+            padding: 20px;
+            margin-top: 24px;
+            border: 1px solid rgba(0, 136, 204, 0.3);
+            text-align: center;
+            transition: 0.3s;
+        }
+        .telegram-channel-box:hover {
+            border-color: #0088cc;
+            box-shadow: 0 0 30px rgba(0, 136, 204, 0.1);
+        }
+        .telegram-channel-box .channel-icon {
+            font-size: 3rem;
+            color: #0088cc;
+            margin-bottom: 8px;
+        }
+        .telegram-channel-box h3 {
+            color: #fff;
+            font-size: 1.1rem;
+            margin-bottom: 4px;
+        }
+        .telegram-channel-box p {
+            color: #9ca3af;
+            font-size: 0.75rem;
+            margin-bottom: 12px;
+        }
+        .telegram-channel-box .btn-telegram {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: #0088cc;
+            border: none;
+            color: #fff;
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: 0.3s;
+            text-decoration: none;
+        }
+        .telegram-channel-box .btn-telegram:hover {
+            background: #006699;
+            transform: scale(1.03);
+            box-shadow: 0 4px 20px rgba(0, 136, 204, 0.4);
+        }
+        .telegram-channel-box .btn-telegram i {
+            font-size: 1.2rem;
+        }
+        .telegram-channel-box .channel-note {
+            font-size: 0.55rem;
+            color: #6b7280;
+            margin-top: 8px;
+        }
+
         /* ----- FOOTER ----- */
         .footer {
             text-align: center;
@@ -1088,6 +1146,10 @@
                 flex-direction: column;
             }
             .rush-card-box .input-group button {
+                width: 100%;
+                justify-content: center;
+            }
+            .telegram-channel-box .btn-telegram {
                 width: 100%;
                 justify-content: center;
             }
@@ -1382,24 +1444,35 @@
                 <div id="giftRedeemFeedback" class="feedback"></div>
             </div>
 
-            <!-- Withdraw -->
+            <!-- Withdraw (UPDATED: dynamic tax & min) -->
             <div class="withdraw-section">
                 <h3><i class="fa-solid fa-hand-holding-dollar"></i> Request Withdrawal</h3>
-                <div class="fee-info">
-                    <i class="fa-regular fa-circle-info"></i> Minimum: <strong>₦500</strong> &nbsp;|&nbsp; Maximum: <strong>₦5,000</strong> &nbsp;|&nbsp; Fee: <strong>10%</strong>
+                <div class="fee-info" id="feeInfo">
+                    <i class="fa-regular fa-circle-info"></i> Minimum: <strong id="minWithdrawDisplay">₦500</strong> &nbsp;|&nbsp; Maximum: <strong>₦5,000</strong> &nbsp;|&nbsp; Fee: <strong id="taxRateDisplay">10%</strong>
                 </div>
                 <div class="input-group">
                     <label>Amount (₦)</label>
                     <input type="number" id="withdrawAmount" placeholder="Enter amount" min="500" max="5000" step="100" />
-                    <div class="hint" style="color:#6b7280;font-size:0.6rem;">Min ₦500 – Max ₦5,000</div>
+                    <div class="hint" style="color:#6b7280;font-size:0.6rem;">Min <span id="minWithdrawHint">₦500</span> – Max ₦5,000</div>
                 </div>
                 <div class="fee-breakdown" id="feeBreakdown">
                     <span>Gross: ₦<span id="grossDisplay">0</span></span>
-                    <span class="tax">Fee (10%): -₦<span id="taxDisplay">0</span></span>
+                    <span class="tax">Fee (<span id="taxPercentLabel">10</span>%): -₦<span id="taxDisplay">0</span></span>
                     <span class="net">Net: ₦<span id="netDisplay">0</span></span>
                 </div>
                 <button class="btn-withdraw" id="withdrawBtn" onclick="submitWithdraw()"><i class="fa-solid fa-paper-plane"></i> Withdraw</button>
                 <div class="min-note">You will be asked for your 4‑digit PIN.</div>
+            </div>
+
+            <!-- ===== TELEGRAM CHANNEL SECTION (NEW) ===== -->
+            <div class="telegram-channel-box">
+                <div class="channel-icon"><i class="fa-brands fa-telegram"></i></div>
+                <h3>Join Our Telegram Channel</h3>
+                <p>Stay updated with new tasks, withdrawal announcements, and exclusive offers.</p>
+                <a href="https://t.me/initialstakes" target="_blank" class="btn-telegram">
+                    <i class="fa-brands fa-telegram"></i> Join @initialstakes
+                </a>
+                <div class="channel-note">🔔 Get instant notifications for new tasks and payouts</div>
             </div>
         </div>
 
@@ -1605,7 +1678,6 @@
                 return showError('Account number must be exactly 10 digits.');
             }
 
-            // Check uniqueness of the account number
             try {
                 const acctSnap = await rtdb.ref('users').orderByChild('accountNumber').equalTo(acct).once('value');
                 if (acctSnap.exists()) {
@@ -1629,7 +1701,6 @@
                     `💳 <b>Bank Details Updated by User</b>\n👤 ${currentUserData.username}\n🔑 UID: ${currentUserData.uid}\n🏦 ${bank} | ${acct} (${name})`
                 );
 
-                // Update local data
                 currentUserData.bankName = bank;
                 currentUserData.accountNumber = acct;
                 currentUserData.accountName = name;
@@ -1674,19 +1745,15 @@
             if (!/^\d{4}$/.test(pin)) return showError('PIN must be exactly 4 digits.');
 
             try {
-                // Check email uniqueness
                 const emailSnap = await rtdb.ref('users').orderByChild('email').equalTo(email).once('value');
                 if (emailSnap.exists()) return showError('This email is already taken.');
 
-                // Check phone uniqueness
                 const phoneSnap = await rtdb.ref('users').orderByChild('phone').equalTo(phone).once('value');
                 if (phoneSnap.exists()) return showError('This phone number is already registered.');
 
-                // Check account number uniqueness
                 const acctSnap = await rtdb.ref('users').orderByChild('accountNumber').equalTo(acctNo).once('value');
                 if (acctSnap.exists()) return showError('This account number is already registered.');
 
-                // Check display name uniqueness
                 const nameSnap = await rtdb.ref('users').orderByChild('accountName').equalTo(name).once('value');
                 if (nameSnap.exists()) return showError('This display name is already taken.');
 
@@ -1842,7 +1909,6 @@
                 if (!user) { setButtonLoading(btn, false, '', originalText); return showError('You are not logged in.'); }
                 const uid = user.uid;
 
-                // Uniqueness checks (excluding self)
                 const emailSnap = await rtdb.ref('users').orderByChild('email').equalTo(user.email).once('value');
                 if (emailSnap.exists()) {
                     let found = false;
@@ -1914,6 +1980,8 @@
         let currentUserId = null;
         let pendingTaskId = null;
         let hasPendingWithdrawal = false;
+        let taxRate = 10;
+        let minWithdraw = 500;
 
         const balanceEl = document.getElementById('userBalance');
         const uidEl = document.getElementById('userUid');
@@ -1926,8 +1994,48 @@
         const grossDisplay = document.getElementById('grossDisplay');
         const taxDisplay = document.getElementById('taxDisplay');
         const netDisplay = document.getElementById('netDisplay');
+        const taxRateDisplay = document.getElementById('taxRateDisplay');
+        const taxPercentLabel = document.getElementById('taxPercentLabel');
+        const minWithdrawDisplay = document.getElementById('minWithdrawDisplay');
+        const minWithdrawHint = document.getElementById('minWithdrawHint');
         const loader = document.getElementById('appLoader');
         const bankSetupSection = document.getElementById('bankSetupSection');
+
+        // ================================================================
+        // LOAD TAX & MIN WITHDRAW
+        // ================================================================
+        async function loadSettings() {
+            try {
+                const taxSnap = await rtdb.ref('settings/withdrawalTax').once('value');
+                taxRate = taxSnap.val() ?? 10;
+                document.getElementById('taxRateDisplay').textContent = taxRate + '%';
+                document.getElementById('taxPercentLabel').textContent = taxRate;
+
+                const minSnap = await rtdb.ref('settings/minWithdraw').once('value');
+                minWithdraw = minSnap.val() ?? 500;
+                document.getElementById('minWithdrawDisplay').textContent = '₦' + minWithdraw.toLocaleString();
+                document.getElementById('minWithdrawHint').textContent = '₦' + minWithdraw.toLocaleString();
+
+                // Update withdraw amount min attribute
+                document.getElementById('withdrawAmount').min = minWithdraw;
+
+                // Update fee display
+                const val = parseFloat(withdrawAmount.value) || 0;
+                updateFeeDisplay(val);
+            } catch (e) {
+                console.error('Settings load error:', e);
+                taxRate = 10;
+                minWithdraw = 500;
+            }
+        }
+
+        function updateFeeDisplay(val) {
+            const fee = val * (taxRate / 100);
+            const net = val - fee;
+            grossDisplay.textContent = val.toFixed(2);
+            taxDisplay.textContent = fee.toFixed(2);
+            netDisplay.textContent = net.toFixed(2);
+        }
 
         // ================================================================
         // REAL-TIME LISTENERS (for pending withdrawal check)
@@ -2036,7 +2144,6 @@
                 }
                 tasksContainer.innerHTML = html;
 
-                // Restore pending task state
                 const savedTaskId = localStorage.getItem('pendingTaskId');
                 if (savedTaskId) {
                     const proofBtn = document.getElementById('proofBtn_' + savedTaskId);
@@ -2090,7 +2197,7 @@
         };
 
         // ================================================================
-        // PROOF MODAL – Base64 (no Firebase Storage)
+        // PROOF MODAL – Base64
         // ================================================================
         let selectedFile = null;
         let selectedFileDataURL = null;
@@ -2213,7 +2320,6 @@
             document.getElementById('proofStatus').style.color = '#fbbf24';
 
             try {
-                // Save base64 directly to database
                 const subRef = rtdb.ref('taskSubmissions').push();
                 await subRef.set({
                     taskId: pendingTaskId,
@@ -2283,9 +2389,6 @@
                 return;
             }
 
-            // Check if user already redeemed this code?
-            // We'll query the gift card first.
-
             setButtonLoading(btn, true, 'Checking...', '<i class="fa-solid fa-gift"></i> Redeem');
 
             try {
@@ -2314,7 +2417,6 @@
                     return;
                 }
 
-                // Check if this user already redeemed this code
                 const usedBy = card.usedBy || [];
                 const alreadyUsed = usedBy.some(entry => {
                     if (typeof entry === 'string') return entry === currentUserData.uid;
@@ -2327,7 +2429,6 @@
                     return;
                 }
 
-                // Determine the amount for this user (first come first served)
                 const distribution = card.distribution || [];
                 const nextIndex = card.usedCount || 0;
                 if (nextIndex >= distribution.length) {
@@ -2338,7 +2439,6 @@
                 }
                 const rewardAmount = distribution[nextIndex].amount || 0;
 
-                // Ask for PIN
                 const { value: pin } = await Swal.fire({
                     title: 'Enter Your 4-Digit PIN',
                     input: 'password',
@@ -2365,7 +2465,6 @@
                     return;
                 }
 
-                // Double‑check again (avoid race conditions)
                 const cardSnap2 = await rtdb.ref('giftCards/' + code).once('value');
                 if (!cardSnap2.exists()) {
                     feedback.className = 'feedback error';
@@ -2388,13 +2487,11 @@
                     return;
                 }
 
-                // Proceed: credit user
                 const newBalance = (currentUserData.balance || 0) + rewardAmount;
                 await rtdb.ref('users/' + currentUserId).update({ balance: newBalance });
                 currentUserData.balance = newBalance;
                 balanceEl.textContent = `₦${newBalance.toLocaleString()}`;
 
-                // Update card: increment usedCount, add to usedBy
                 const newUsedCount = (card2.usedCount || 0) + 1;
                 const newUsedBy = [...usedBy2, {
                     uid: currentUserData.uid,
@@ -2407,7 +2504,6 @@
                     usedBy: newUsedBy
                 });
 
-                // Add ledger entry
                 await rtdb.ref('ledger').push({
                     uid: currentUserData.uid,
                     userId: currentUserId,
@@ -2418,7 +2514,6 @@
                     timestamp: new Date().toISOString()
                 });
 
-                // Send Telegram notification
                 await sendTelegramMessage(
                     `🎫 <b>Gift Card Redeemed</b>\n👤 ${currentUserData.username}\n🔑 UID: ${currentUserData.uid}\n💰 Amount: ₦${rewardAmount}\n📇 Code: ${code}`
                 );
@@ -2428,7 +2523,6 @@
                 codeInput.value = '';
                 setButtonLoading(btn, false, '', '<i class="fa-solid fa-gift"></i> Redeem');
 
-                // Refresh stats and UI
                 showSuccess('🎉 Gift Card Redeemed!', `You received ₦${rewardAmount.toLocaleString()}. Your balance has been updated.`, 5000);
 
             } catch (e) {
@@ -2440,23 +2534,19 @@
         };
 
         // ================================================================
-        // WITHDRAWAL – with pending check, min 500, max 5000
+        // WITHDRAWAL – with dynamic tax & min withdraw
         // ================================================================
         withdrawAmount.addEventListener('input', function() {
             let val = parseFloat(this.value) || 0;
             if (val < 0) this.value = 0;
             if (val > 5000) this.value = 5000;
-            const fee = val * 0.10;
-            const net = val - fee;
-            grossDisplay.textContent = val.toFixed(2);
-            taxDisplay.textContent = fee.toFixed(2);
-            netDisplay.textContent = net.toFixed(2);
+            updateFeeDisplay(val);
         });
 
         async function submitWithdraw() {
             if (!currentUserData || !currentUserId) return showError('Please login again.');
             const amount = parseFloat(withdrawAmount.value);
-            if (isNaN(amount) || amount < 500) return showError('Minimum withdrawal is ₦500.');
+            if (isNaN(amount) || amount < minWithdraw) return showError(`Minimum withdrawal is ₦${minWithdraw}.`);
             if (amount > 5000) return showError('Maximum withdrawal is ₦5,000.');
             if (amount > (currentUserData.balance || 0)) return showError('Insufficient balance.');
 
@@ -2489,9 +2579,9 @@
             if (!pin) { setButtonLoading(btn, false, '', originalText); return; }
             if (pin !== currentUserData.pin) { setButtonLoading(btn, false, '', originalText); return showError('Incorrect PIN. Please try again.'); }
 
-            const fee = amount * 0.10;
+            const fee = amount * (taxRate / 100);
             const net = amount - fee;
-            const confirm = await showConfirm('Confirm Withdrawal', `You will receive <strong>₦${net.toFixed(2)}</strong> (after 10% fee).`);
+            const confirm = await showConfirm('Confirm Withdrawal', `You will receive <strong>₦${net.toFixed(2)}</strong> (after ${taxRate}% fee).`);
             if (!confirm.isConfirmed) { setButtonLoading(btn, false, '', originalText); return; }
 
             try {
@@ -2549,6 +2639,8 @@
             }
             currentUserId = user.uid;
 
+            await loadSettings();
+
             const userSnap = await rtdb.ref('users/' + currentUserId).once('value');
             if (!userSnap.exists()) {
                 showSetup();
@@ -2559,28 +2651,18 @@
             currentUserData = userSnap.val();
             showDashboard();
 
-            // Set username
             userNameDisplay.textContent = currentUserData.username || 'User';
-
-            // Balance
             balanceEl.textContent = `₦${(currentUserData.balance || 0).toLocaleString()}`;
-
-            // UID
             uidEl.textContent = currentUserData.uid || 'N/A';
-
-            // Bank details
             displayBankDetails();
 
-            // Check if bank is locked or missing – show setup section
             if (!currentUserData.bankLocked || currentUserData.bankName === 'Not set' || currentUserData.bankName === '') {
                 bankSetupSection.style.display = 'block';
             } else {
                 bankSetupSection.style.display = 'none';
             }
 
-            // Attach pending withdrawal listener
             attachPendingListener();
-
             await loadTasks();
 
             rtdb.ref('users/' + currentUserId).on('value', (snap) => {
@@ -2595,6 +2677,21 @@
                     }
                     displayBankDetails();
                 }
+            });
+
+            rtdb.ref('settings/withdrawalTax').on('value', (snap) => {
+                taxRate = snap.val() ?? 10;
+                document.getElementById('taxRateDisplay').textContent = taxRate + '%';
+                document.getElementById('taxPercentLabel').textContent = taxRate;
+                const val = parseFloat(withdrawAmount.value) || 0;
+                updateFeeDisplay(val);
+            });
+
+            rtdb.ref('settings/minWithdraw').on('value', (snap) => {
+                minWithdraw = snap.val() ?? 500;
+                document.getElementById('minWithdrawDisplay').textContent = '₦' + minWithdraw.toLocaleString();
+                document.getElementById('minWithdrawHint').textContent = '₦' + minWithdraw.toLocaleString();
+                document.getElementById('withdrawAmount').min = minWithdraw;
             });
 
             loader.classList.add('hidden');
